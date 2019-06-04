@@ -187,4 +187,4 @@ class BaseStock():
 
             print("#######当前状态信息########")
 
-            time.sleep(3)
+            time.sleep(5)
