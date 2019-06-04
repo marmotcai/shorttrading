@@ -146,8 +146,10 @@ class BaseStock():
     #########################################################################################
 
     def run(self):
-        for num in range(1, 1000):
+        # for num in range(1, 1000):
+        while True:
             if not self.istringtime():
+                print("休市中")
                 time.sleep(30)
                 continue
 
