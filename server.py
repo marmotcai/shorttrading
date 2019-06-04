@@ -102,7 +102,7 @@ class BaseServer():
         # 设置当服务器先close 即服务器端4次挥手之后资源能够立即释放，这样就保证了，下次运行程序时 可以立即绑定7788端口
         server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # 设置服务端提供服务的端口号
-        server_socket.bind(('', 7788))
+        server_socket.bind(('', 5588))
         # 使用socket创建的套接字默认的属性是主动的，使用listen将其改为被动，用来监听连接
         server_socket.listen(128)  # 最多可以监听128个连接
         # 开启while循环处理访问过来的请求
