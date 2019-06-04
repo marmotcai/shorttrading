@@ -16,8 +16,8 @@ class BaseServer():
         # 打印从客户端发送过来的数据内容
         # print("client_recv:",recv_data)
         request_header_lines = recv_data.splitlines()
-        for line in request_header_lines:
-            print(line)
+        # for line in request_header_lines:
+        #     print(line)
 
         # 返回浏览器数据
         # 设置内容body
@@ -28,38 +28,42 @@ class BaseServer():
             if file_path == "./html/":
                 file_path = "./html/index.html"
         try:
+
             # 设置返回的头信息 header
             #response_headers = "HTTP/1.1 200 OK\r\n"  # 200 表示找到这个资源
             #response_headers += "content-type=\"text/html;charset=utf-8;\"\r\n"
             #response_headers += "\r\n"  # 空一行与body隔开
 
             stockinfo_body = ""
-            stockinfo_body += "<div>当前价格：" + str(self.s.marketinfo.now) + "</div>\r\n"
-            stockinfo_body += "<div>成本单价: " + str(self.s.current_cost) + "</div>\r\n"
-            stockinfo_body += "<div>总持仓: " + str(self.s.position) + "</div>\r\n"
-            stockinfo_body += "<div>成本: " + str(self.s.primecost) + "</div>\r\n"
-            stockinfo_body += "<div>市值: " + str(self.s.tolvalue) + "</div>\r\n"
-            stockinfo_body += "<div>买入总税费: " + str(self.s.buy_charge) + "</div>\r\n"
-            stockinfo_body += "<div>卖出总税费: " + str(self.s.sell_charge) + "</div>\r\n"
-            stockinfo_body += "<div>当前买入单: " + str(self.s.buy_order.__len__()) + "/" + str(self.s.buy_count) + "</div>\r\n"
-            stockinfo_body += "<div>当前卖出单: " + str(self.s.sell_order.__len__()) + "/" + str(self.s.sell_count) + "</div>\r\n"
-            stockinfo_body += "<div>交易次数: " + str(self.s.bid.__len__()) + "</div>\r\n"
-
-            if (self.s.floating_income > 0):
-                stockinfo_body += "<div>浮动盈亏: <span style=\"color:red;\">" + str(self.s.floating_income) + "</span></div>\r\n"
+            if not self.s.istringtime():
+                stockinfo_body = "休市中\r\n"
             else:
-                stockinfo_body += "<div>浮动盈亏: <span style=\"color:green;\">" + str(self.s.floating_income) + "</span></div>\r\n"
+                stockinfo_body += "<div>当前价格：" + str(self.s.marketinfo.now) + "</div>\r\n"
+                stockinfo_body += "<div>成本单价: " + str(self.s.current_cost) + "</div>\r\n"
+                stockinfo_body += "<div>总持仓: " + str(self.s.position) + "</div>\r\n"
+                stockinfo_body += "<div>成本: " + str(self.s.primecost) + "</div>\r\n"
+                stockinfo_body += "<div>市值: " + str(self.s.tolvalue) + "</div>\r\n"
+                stockinfo_body += "<div>买入总税费: " + str(self.s.buy_charge) + "</div>\r\n"
+                stockinfo_body += "<div>卖出总税费: " + str(self.s.sell_charge) + "</div>\r\n"
+                stockinfo_body += "<div>当前买入单: " + str(self.s.buy_order.__len__()) + "/" + str(self.s.buy_count) + "</div>\r\n"
+                stockinfo_body += "<div>当前卖出单: " + str(self.s.sell_order.__len__()) + "/" + str(self.s.sell_count) + "</div>\r\n"
+                stockinfo_body += "<div>交易次数: " + str(self.s.bid.__len__()) + "</div>\r\n"
 
-            if (self.s.interval_income > 0):
-                stockinfo_body += "<div>波段盈亏: <span style=\"color:red;\">" + str(self.s.interval_income) + "</span></div>\r\n"
-            else:
-                stockinfo_body += "<div>波段盈亏: <span style=\"color:green;\">" + str(self.s.interval_income) + "</span></div>\r\n"
+                if (self.s.floating_income > 0):
+                    stockinfo_body += "<div>浮动盈亏: <span style=\"color:red;\">" + str(self.s.floating_income) + "</span></div>\r\n"
+                else:
+                    stockinfo_body += "<div>浮动盈亏: <span style=\"color:green;\">" + str(self.s.floating_income) + "</span></div>\r\n"
 
-            income = round(self.s.floating_income + self.s.interval_income, 2)
-            if (income > 0):
-                stockinfo_body += "<div>总盈亏: <span style=\"color:red;\">" + str(income) + "</span></div>\r\n"
-            else:
-                stockinfo_body += "<div>总盈亏: <span style=\"color:green;\">" + str(income) + "</span></div>\r\n"
+                if (self.s.interval_income > 0):
+                    stockinfo_body += "<div>波段盈亏: <span style=\"color:red;\">" + str(self.s.interval_income) + "</span></div>\r\n"
+                else:
+                    stockinfo_body += "<div>波段盈亏: <span style=\"color:green;\">" + str(self.s.interval_income) + "</span></div>\r\n"
+
+                income = round(self.s.floating_income + self.s.interval_income, 2)
+                if (income > 0):
+                    stockinfo_body += "<div>总盈亏: <span style=\"color:red;\">" + str(income) + "</span></div>\r\n"
+                else:
+                    stockinfo_body += "<div>总盈亏: <span style=\"color:green;\">" + str(income) + "</span></div>\r\n"
 
             response_headers = "HTTP/1.1 200 OK\r\n"  # 200 表示找到这个资源
             response_headers += "\r\n"  # 空一行与body隔开

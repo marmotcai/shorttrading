@@ -1,4 +1,6 @@
 
+import datetime
+
 class startinfos: # 启动信息
     def __init__(self):
         self.stock_code = 0 # 股票代码
