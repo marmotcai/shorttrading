@@ -20,21 +20,16 @@ RUN git clone $BASE_GIT_URL
 RUN cd $BASE_APP_NAME && \
     python setup.py install
 
-ENV WORK_DIR=/root/stock
 WORKDIR ${WORK_DIR}
-COPY data/stock/ ${WORK_DIR}
 
-# ENV MYSQL_PYTHON_URL="https://nchc.dl.sourceforge.net/project/mysql-python/mysql-python-test/1.2.4b4/MySQL-python-1.2.2.tar.gz"
-# RUN wget -O ${WORK_DIR}/mysql_python_url.tar.gz ${MYSQL_PYTHON_URL} && \
-#     tar -zxvf ${WORK_DIR}/MySQL-python.tar.gz -C ${WORK_DIR}/MySQL-python && \
-#     rm -f ${WORK_DIR}/MySQL-python.tar.gz && cd ${WORK_DIR}/MySQL-python && \
-#     python setup.py build && python setup.py install
+ENV APP_NAME=shorttrading
+ENV GIT_URL=https://github.com/marmotcai/shorttrading.git
 
-# RUN python -m pip install --upgrade --force pip
-# RUN pip install setuptools==33.1.1
-# RUN pip install distribute
+RUN git clone $GIT_URL
 
-# RUN pip install MySQL-python
+ENV WORK_DIR=${WORK_DIR}/${APP_NAME}
+
+EXPOSE 5588
 
 WORKDIR $WORK_DIR
 
