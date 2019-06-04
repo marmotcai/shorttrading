@@ -27,26 +27,6 @@ class BaseStock():
 
     #########################################################################################
 
-    def istringtime(self):
-        date = datetime.datetime.now()
-        day = date.weekday()
-        if (day > 4):
-            return 0
-
-        am_time1 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '9:30', '%Y-%m-%d%H:%M')
-        am_time2 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '11:30', '%Y-%m-%d%H:%M')
-        pm_time1 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '13:00', '%Y-%m-%d%H:%M')
-        pm_time2 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '15:00', '%Y-%m-%d%H:%M')
-
-        if date >= am_time1 and date <= am_time2:
-            return 1
-        if date >= pm_time1 and date <= pm_time2:
-            return 1
-
-        return 0
-
-    #########################################################################################
-
     def judge(self, marketinfos):
 
         def judge_buy(marketinfo):
