@@ -33,4 +33,5 @@ EXPOSE 5588
 
 WORKDIR $WORK_DIR
 
-ENTRYPOINT [ "python3.7", "main.py" ]
+RUN chmod +x run.sh
+ENTRYPOINT [ "run.sh" ]
