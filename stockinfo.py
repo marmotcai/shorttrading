@@ -1,8 +1,28 @@
 
 import datetime
 
+
+def istringtime():  # 判断是否交易日
+    date = datetime.datetime.now()
+    day = date.weekday()
+    if (day > 4):
+        return 0
+
+    am_time1 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '9:25', '%Y-%m-%d%H:%M')
+    am_time2 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '11:35', '%Y-%m-%d%H:%M')
+    pm_time1 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '12:55', '%Y-%m-%d%H:%M')
+    pm_time2 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '15:05', '%Y-%m-%d%H:%M')
+
+    if date >= am_time1 and date <= am_time2:
+        return 1
+    if date >= pm_time1 and date <= pm_time2:
+        return 1
+
+    return 0
+
 class startinfos: # 启动信息
     def __init__(self):
+        self.stock_name = "" # 股票名称
         self.stock_code = 0 # 股票代码
         self.minimum_profit = 300 # 单次交易最小盈利值
         self.minimum_volume = 1000 # 单次交易数量
@@ -74,23 +94,42 @@ class statistics: # 当前状态信息
 
     #########################################################################################
 
-    def istringtime(self): # 判断是否交易日
-        date = datetime.datetime.now()
-        day = date.weekday()
-        if (day > 4):
-            return 0
 
-        am_time1 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '9:30', '%Y-%m-%d%H:%M')
-        am_time2 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '11:30', '%Y-%m-%d%H:%M')
-        pm_time1 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '13:00', '%Y-%m-%d%H:%M')
-        pm_time2 = datetime.datetime.strptime(str(datetime.datetime.now().date()) + '15:00', '%Y-%m-%d%H:%M')
+    def get_state_htmlitem(self):
+        stateinfo = ""
 
-        if date >= am_time1 and date <= am_time2:
-            return 1
-        if date >= pm_time1 and date <= pm_time2:
-            return 1
+        if not istringtime():
+            stateinfo += "<div>" + str(self.startinfo.stock_name) + " (" + self.startinfo.stock_code + ") 休市中</div>"
+        else:
+            stateinfo += "<div>" + str(self.startinfo.stock_name) + " (" + self.startinfo.stock_code + ")</div>"
+            stateinfo += "<div>当前价格: " + str(self.marketinfo.now) + "</div>"
+            stateinfo += "<div>成本单价: " + str(self.current_cost) + "</div>"
+            stateinfo += "<div>总持仓: " + str(self.position) + "</div>"
+            stateinfo += "<div>成本: " + str(self.primecost) + "</div>"
+            stateinfo += "<div>市值: " + str(self.tolvalue) + "</div>"
+            stateinfo += "<div>买入总税费: " + str(self.buy_charge) + "</div>"
+            stateinfo += "<div>卖出总税费: " + str(self.sell_charge) + "</div>"
+            stateinfo += "<div>当前买入单: " + str(self.buy_order.__len__()) + "/" + str(self.buy_count) + "</div>"
+            stateinfo += "<div>当前卖出单: " + str(self.sell_order.__len__()) + "/" + str(self.sell_count) + "</div>"
+            stateinfo += "<div>交易次数: " + str(self.bid.__len__()) + "</div>"
 
-        return 0
+            if (self.floating_income > 0):
+                stateinfo += "<div>浮动盈亏: <span style=\"color:red;\">" + str(self.floating_income) + "</span></div>"
+            else:
+                stateinfo += "<div>浮动盈亏: <span style=\"color:green;\">" + str(self.floating_income) + "</span></div>"
+
+            if (self.interval_income > 0):
+                stateinfo += "<div>波段盈亏: <span style=\"color:red;\">" + str(self.interval_income) + "</span></div>"
+            else:
+                stateinfo += "<div>波段盈亏: <span style=\"color:green;\">" + str(self.interval_income) + "</span></div>"
+
+            income = round(self.floating_income + self.interval_income, 2)
+            if (income > 0):
+                stateinfo += "<div>总盈亏: <span style=\"color:red;\">" + str(income) + "</span></div>"
+            else:
+                stateinfo += "<div>总盈亏: <span style=\"color:green;\">" + str(income) + "</span></div>"
+
+        return stateinfo
 
 class calc:  # 计算工具类
 

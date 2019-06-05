@@ -20,10 +20,8 @@ class BaseStock():
         self.calc = stockinfo.calc(self.s)
         stock_value = self.quotation.stocks([self.s.startinfo.stock_code])[self.s.startinfo.stock_code]
 
-        name = stock_value['name']  # 名字
-        now = stock_value['now']  # 现价
-
-        print(str(stock_value['name']))
+        self.s.startinfo.stock_name = stock_value['name']  # 名字
+        print(str(self.s.startinfo.stock_name))
 
     #########################################################################################
 
@@ -128,7 +126,7 @@ class BaseStock():
     def run(self):
         # for num in range(1, 1000):
         while True:
-            if not self.s.istringtime():
+            if not stockinfo.istringtime():
                 print("休市中")
                 time.sleep(30)
                 continue
@@ -150,8 +148,9 @@ class BaseStock():
             self.s.marketinfo.date = stock_value['date']  # 日期
             self.s.marketinfo.time = stock_value['time']  # 时间
 
-            self.s.marketinfo.now = self.s.marketinfo.now + round(random.randrange(-10, 10) / 100, 2)
-            self.s.marketinfo.now = round(self.s.marketinfo.now, 2)
+            #  测试用，随机价格
+            # self.s.marketinfo.now = self.s.marketinfo.now + round(random.randrange(-10, 10) / 100, 2)
+            # self.s.marketinfo.now = round(self.s.marketinfo.now, 2)
 
             print("\r\n")
 

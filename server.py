@@ -9,6 +9,9 @@ class BaseServer():
     def __init__(self, stock_obj):
         self.s = stock_obj.s
 
+        # 读取html文件内容
+        self.index_file = open("./html/index.html", "r")
+
     def handle_client(self, client_socket):
         """为一个客户端服务"""
         # 接收对方发送的数据
@@ -24,30 +27,21 @@ class BaseServer():
         # 使用正则匹配出文件路径
         ret = re.match(r"[^/]+/([^\s]*)", request_header_lines[0])
         if ret:
-            file_path = "./html/" + ret.group(1)
-            if file_path == "./html/":
-                file_path = "./html/index.html"
-        try:
-
-            # 设置返回的头信息 header
-            #response_headers = "HTTP/1.1 200 OK\r\n"  # 200 表示找到这个资源
-            #response_headers += "content-type=\"text/html;charset=utf-8;\"\r\n"
-            #response_headers += "\r\n"  # 空一行与body隔开
 
             stockinfo_body = ""
             if not self.s.istringtime():
                 stockinfo_body = "休市中\r\n"
             else:
-                stockinfo_body += "<div>当前价格：" + str(self.s.marketinfo.now) + "</div>\r\n"
-                stockinfo_body += "<div>成本单价: " + str(self.s.current_cost) + "</div>\r\n"
-                stockinfo_body += "<div>总持仓: " + str(self.s.position) + "</div>\r\n"
-                stockinfo_body += "<div>成本: " + str(self.s.primecost) + "</div>\r\n"
-                stockinfo_body += "<div>市值: " + str(self.s.tolvalue) + "</div>\r\n"
-                stockinfo_body += "<div>买入总税费: " + str(self.s.buy_charge) + "</div>\r\n"
-                stockinfo_body += "<div>卖出总税费: " + str(self.s.sell_charge) + "</div>\r\n"
-                stockinfo_body += "<div>当前买入单: " + str(self.s.buy_order.__len__()) + "/" + str(self.s.buy_count) + "</div>\r\n"
-                stockinfo_body += "<div>当前卖出单: " + str(self.s.sell_order.__len__()) + "/" + str(self.s.sell_count) + "</div>\r\n"
-                stockinfo_body += "<div>交易次数: " + str(self.s.bid.__len__()) + "</div>\r\n"
+                stockinfo_body += "<div>当前价格: " + str(self.s.marketinfo.now) + "</div>"
+                stockinfo_body += "<div>成本单价: " + str(self.s.current_cost) + "</div>"
+                stockinfo_body += "<div>总持仓: " + str(self.s.position) + "</div>"
+                stockinfo_body += "<div>成本: " + str(self.s.primecost) + "</div>"
+                stockinfo_body += "<div>市值: " + str(self.s.tolvalue) + "</div>"
+                stockinfo_body += "<div>买入总税费: " + str(self.s.buy_charge) + "</div>"
+                stockinfo_body += "<div>卖出总税费: " + str(self.s.sell_charge) + "</div>"
+                stockinfo_body += "<div>当前买入单: " + str(self.s.buy_order.__len__()) + "/" + str(self.s.buy_count) + "</div>"
+                stockinfo_body += "<div>当前卖出单: " + str(self.s.sell_order.__len__()) + "/" + str(self.s.sell_count) + "</div>"
+                stockinfo_body += "<div>交易次数: " + str(self.s.bid.__len__()) + "</div>"
 
                 if (self.s.floating_income > 0):
                     stockinfo_body += "<div>浮动盈亏: <span style=\"color:red;\">" + str(self.s.floating_income) + "</span></div>\r\n"
@@ -65,39 +59,34 @@ class BaseServer():
                 else:
                     stockinfo_body += "<div>总盈亏: <span style=\"color:green;\">" + str(income) + "</span></div>\r\n"
 
+            # 设置返回的头信息 header
             response_headers = "HTTP/1.1 200 OK\r\n"  # 200 表示找到这个资源
+            response_headers += "content-type=\"text/html;charset=utf-8;\"\r\n"
             response_headers += "\r\n"  # 空一行与body隔开
 
-            # 读取html文件内容
-            file_name = file_path  # 设置读取的文件路径
-            f = open(file_name, "r")  # 以二进制读取文件内容
             response_body = ""
-            try:
-                text_lines = f.readlines()
-                for line in text_lines:
-                    if ("#stockinfo#" in line):
-                        response_body += stockinfo_body + "\r\n"
-                    else:
-                        response_body += line
+            self.index_file.seek(0)
+            text_lines = self.index_file.readlines()
+            for line in text_lines:
+                if ("msg" in line):
+                    if ("msg1" in line):
+                        response_body += line.replace("msg1", stockinfo_body)
+                    if ("msg2" in line):
+                        response_body += line.replace("msg2", stockinfo_body)
+                    if ("msg3" in line):
+                        response_body += line.replace("msg3", stockinfo_body)
+                    if ("msg4" in line):
+                        response_body += line.replace("msg4", stockinfo_body)
+                else:
+                    response_body += line
 
-            finally:
-                f.close()
+            self.index_file.seek(0)
 
             response = response_headers + response_body
 
             # 返回数据给浏览器
-            client_socket.send(response.encode("gb2312"))  # 转码utf-8并send数据到浏览器
-
-        except:
-            # 如果没有找到文件，那么就打印404 not found
-            # 设置返回的头信息 header
-            response_headers = "HTTP/1.1 404 not found\r\n"
-            response_headers += "\r\n"  # 空一行与body隔开
-            response_body = "<h1>sorry,file not found</h1>"
-            response = response_headers + response_body
-            client_socket.send(response.encode("utf-8"))
-
-        client_socket.close()
+            client_socket.send(response.encode("utf-8"))  # 转码utf-8并send数据到浏览器
+            client_socket.close()
 
 
     def run(self):
@@ -116,3 +105,5 @@ class BaseServer():
             # server_socket就可以省下来专门等待其他新的客户端连接while True:
             client_socket, clientAddr = server_socket.accept()
             self.handle_client(client_socket)
+
+        self.index_file.close
