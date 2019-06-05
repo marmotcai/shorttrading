@@ -28,6 +28,8 @@ ENV GIT_URL=https://github.com/marmotcai/shorttrading.git
 RUN git clone $GIT_URL
 
 ENV WORK_DIR=${WORK_DIR}/${APP_NAME}
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 EXPOSE 5588
 
