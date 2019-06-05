@@ -102,32 +102,33 @@ class statistics: # 当前状态信息
             stateinfo += "<div>" + str(self.startinfo.stock_name) + " (" + self.startinfo.stock_code + ") 休市中</div>"
         else:
             stateinfo += "<div>" + str(self.startinfo.stock_name) + " (" + self.startinfo.stock_code + ")</div>"
-            stateinfo += "<div>当前价格: " + str(self.marketinfo.now) + "</div>"
-            stateinfo += "<div>成本单价: " + str(self.current_cost) + "</div>"
-            stateinfo += "<div>总持仓: " + str(self.position) + "</div>"
-            stateinfo += "<div>成本: " + str(self.primecost) + "</div>"
-            stateinfo += "<div>市值: " + str(self.tolvalue) + "</div>"
-            stateinfo += "<div>买入总税费: " + str(self.buy_charge) + "</div>"
-            stateinfo += "<div>卖出总税费: " + str(self.sell_charge) + "</div>"
-            stateinfo += "<div>当前买入单: " + str(self.buy_order.__len__()) + "/" + str(self.buy_count) + "</div>"
-            stateinfo += "<div>当前卖出单: " + str(self.sell_order.__len__()) + "/" + str(self.sell_count) + "</div>"
-            stateinfo += "<div>交易次数: " + str(self.bid.__len__()) + "</div>"
 
-            if (self.floating_income > 0):
-                stateinfo += "<div>浮动盈亏: <span style=\"color:red;\">" + str(self.floating_income) + "</span></div>"
-            else:
-                stateinfo += "<div>浮动盈亏: <span style=\"color:green;\">" + str(self.floating_income) + "</span></div>"
+        stateinfo += "<div>当前价格: " + str(self.marketinfo.now) + "</div>"
+        stateinfo += "<div>成本单价: " + str(self.current_cost) + "</div>"
+        stateinfo += "<div>总持仓: " + str(self.position) + "</div>"
+        stateinfo += "<div>成本: " + str(self.primecost) + "</div>"
+        stateinfo += "<div>市值: " + str(self.tolvalue) + "</div>"
+        stateinfo += "<div>买入总税费: " + str(self.buy_charge) + "</div>"
+        stateinfo += "<div>卖出总税费: " + str(self.sell_charge) + "</div>"
+        stateinfo += "<div>当前买入单: " + str(self.buy_order.__len__()) + "/" + str(self.buy_count) + "</div>"
+        stateinfo += "<div>当前卖出单: " + str(self.sell_order.__len__()) + "/" + str(self.sell_count) + "</div>"
+        stateinfo += "<div>交易次数: " + str(self.bid.__len__()) + "</div>"
 
-            if (self.interval_income > 0):
-                stateinfo += "<div>波段盈亏: <span style=\"color:red;\">" + str(self.interval_income) + "</span></div>"
-            else:
-                stateinfo += "<div>波段盈亏: <span style=\"color:green;\">" + str(self.interval_income) + "</span></div>"
+        if (self.floating_income > 0):
+            stateinfo += "<div>浮动盈亏: <span style=\"color:red;\">" + str(self.floating_income) + "</span></div>"
+        else:
+            stateinfo += "<div>浮动盈亏: <span style=\"color:green;\">" + str(self.floating_income) + "</span></div>"
 
-            income = round(self.floating_income + self.interval_income, 2)
-            if (income > 0):
-                stateinfo += "<div>总盈亏: <span style=\"color:red;\">" + str(income) + "</span></div>"
-            else:
-                stateinfo += "<div>总盈亏: <span style=\"color:green;\">" + str(income) + "</span></div>"
+        if (self.interval_income > 0):
+            stateinfo += "<div>波段盈亏: <span style=\"color:red;\">" + str(self.interval_income) + "</span></div>"
+        else:
+            stateinfo += "<div>波段盈亏: <span style=\"color:green;\">" + str(self.interval_income) + "</span></div>"
+
+        income = round(self.floating_income + self.interval_income, 2)
+        if (income > 0):
+            stateinfo += "<div>总盈亏: <span style=\"color:red;\">" + str(income) + "</span></div>"
+        else:
+            stateinfo += "<div>总盈亏: <span style=\"color:green;\">" + str(income) + "</span></div>"
 
         return stateinfo
 

@@ -127,7 +127,6 @@ class BaseStock():
         # for num in range(1, 1000):
         while True:
             if not stockinfo.istringtime():
-                print("休市中")
                 time.sleep(30)
                 continue
 
@@ -158,7 +157,7 @@ class BaseStock():
 
             print("\r\n")
 
-            print("#######当前状态信息########")
+            # print("#######当前状态信息########")
 
             self.s.position = 0
             self.s.primecost = 0
@@ -174,16 +173,14 @@ class BaseStock():
 
             self.s.floating_income = round(self.s.tolvalue - self.s.primecost, 2)
 
-            print(" 当前价格：" + str(self.s.marketinfo.now) + " 成本单价: " + str(self.s.current_cost))
+            # print(" 当前价格：" + str(self.s.marketinfo.now) + " 成本单价: " + str(self.s.current_cost))
+            # print(" 当前买入单: " + str(self.s.buy_order.__len__()) + "/" + str(self.s.buy_count) +
+            #       " 当前卖出单: " + str(self.s.sell_order.__len__()) + "/" + str(self.s.sell_count) +
+            #       " 交易次数: " + str(self.s.bid.__len__()))
+            # print(" 总持仓: " + str(self.s.position) + " 成本: " + str(self.s.primecost) + " 市值: " + str(self.s.tolvalue) + "\r\n"
+            #       + " 买入总税费: " + str(self.s.buy_charge) + " 卖出总税费: " + str(self.s.sell_charge) + "\r\n"
+            #       + " 浮动盈亏: " + str(self.s.floating_income) + " 波段盈亏: " + str(self.s.interval_income))
 
-            print(" 当前买入单: " + str(self.s.buy_order.__len__()) + "/" + str(self.s.buy_count) +
-                  " 当前卖出单: " + str(self.s.sell_order.__len__()) + "/" + str(self.s.sell_count) +
-                  " 交易次数: " + str(self.s.bid.__len__()))
-
-            print(" 总持仓: " + str(self.s.position) + " 成本: " + str(self.s.primecost) + " 市值: " + str(self.s.tolvalue) + "\r\n"
-                  + " 买入总税费: " + str(self.s.buy_charge) + " 卖出总税费: " + str(self.s.sell_charge) + "\r\n"
-                  + " 浮动盈亏: " + str(self.s.floating_income) + " 波段盈亏: " + str(self.s.interval_income))
-
-            print("#######当前状态信息########")
+            # print("#######当前状态信息########")
 
             time.sleep(5)
