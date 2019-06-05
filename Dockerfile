@@ -32,6 +32,5 @@ ENV WORK_DIR=${WORK_DIR}/${APP_NAME}
 EXPOSE 5588
 
 WORKDIR $WORK_DIR
-
 RUN chmod +x run.sh
-ENTRYPOINT [ "run.sh" ]
+CMD [ "./run.sh" ]
