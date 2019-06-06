@@ -47,6 +47,55 @@ class startinfos: # 启动信息
     def set_old_position(self, old_position):
         self.old_position = old_position
 
+class qis: # 量化指标
+    def __init__(self, statistics):
+        self.s = statistics  # 当前状态信息
+
+        self.volume = 0  # 当前数量
+        self.cost = 0 # 当前成本
+
+        self.buy_volume = 0 # 买入总量
+        self.buy_primecost = 0 # 买入总成本
+        self.buy_cost = 0 # 买入单价成本
+
+        self.sell_volume = 0 # 卖出总量
+        self.sell_primecost = 0  # 卖出总成本
+        self.sell_cost = 0 # 卖出单价成本
+
+    def get_tolvalue(self): # 获取当前持仓市值
+        return self.volume * self.cost
+
+    def buy_update(self, price, volume):
+        charge = self.s.calc.calc_charge("buy", price, volume)
+        self.buy_primecost = (self.buy_volume * self.buy_cost) + (price * volume) + charge  # 总成本
+
+        self.buy_volume += volume
+        self.buy_cost = round(self.buy_primecost / (self.buy_volume), 5)
+
+        self.update()
+
+    def sell_update(self, price, volume):
+        charge = self.s.calc.calc_charge("sell", price, volume)
+        self.sell_primecost = (self.sell_volume * self.sell_cost) + (price * volume) - charge  # 总成本
+
+        self.sell_volume += volume
+        self.sell_cost = round(self.sell_primecost / (self.sell_volume), 5)
+
+        self.update()
+
+    def update(self):
+        self.volume = self.buy_volume - self.sell_volume
+        if (self.volume > 0):
+            self.cost = round((self.buy_primecost - self.sell_primecost) / self.volume, 5)
+        else:
+            self.cost = 0
+
+    def get_interval_volume(self):
+        return self.buy_volume - self.sell_volume
+
+    def get_interval_income(self):
+        return self.sell_primecost - self.buy_primecost
+
 class orders: # 交易信息
     def __init__(self):
         self.code = 0 # 代码
@@ -56,6 +105,9 @@ class orders: # 交易信息
         self.volume = 0 # 委托数量
         self.marketinfo = 0 # 当前行情信息
         self.charge = 0 # 手续费
+
+    def get_primecost(self):
+        return (self.price * self.volume) + self.charge
 
 class marketinfos: # 行情信息
     def __init__(self):
@@ -72,25 +124,69 @@ class marketinfos: # 行情信息
         self.ask1_volume = 0  # 卖一量
 
 class statistics: # 当前状态信息
-    def __init__(self):
-        self.startinfo = startinfos() # 启动信息
+    def __init__(self, startinfos):
+        self.startinfo = startinfos # 启动信息
         self.marketinfo = marketinfos() # 最新行情信息
         self.position = 0 # 当前总持仓
         self.primecost = 0 # 当前总成本
         self.tolvalue = 0 # 当前市值
+        self.tradable = startinfos.old_position # 可卖出交易数量
         self.floating_income = 0  # 浮动收益，代表市值和成本差
         self.interval_income = 0  # 区间收益，代表波段操作收益
+        self.last_time = datetime.datetime.now() # 记录上次的日期和时间
         self.buy_charge = 0   # 买入总税费
         self.sell_charge = 0   # 卖出总税费
         self.current_cost = 0 # 持仓成本单价
         self.bid = {}  # 下单记录
         self.buy_order = {}  # 买入记录
-        self.buy_count = 0  # 买入次数
         self.sell_order = {}  # 卖出记录
-        self.sell_count = 0  # 卖出次数
+        self.qi = qis(self)  # 量化指标信息
+        self.calc = calc(self) # 计算工具类
 
-    def get_quota(self): # 判断资金余量
-        return round(self.primecost / self.startinfo.maximum_capital, 2)
+    def update(self): # 刷新当前信息
+        self.position = 0
+        self.primecost = 0
+        self.buy_charge = 0
+        self.sell_charge = 0
+
+        for b in self.buy_order:
+            order = self.buy_order.get(b)
+            self.position = self.position + order.volume  # 计算买入总持仓
+            self.primecost = self.primecost + order.get_primecost()  # 计算买入总成本
+            self.buy_charge = self.buy_charge + order.charge
+
+        for b in self.sell_order:
+            order = self.sell_order.get(b)
+            self.position = self.position - order.volume  # 计算卖出总持仓
+            self.primecost = self.primecost - order.get_primecost()  # 计算卖出总成本
+            self.sell_charge = self.sell_charge + order.charge
+
+        yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+        if (yesterday.day == self.last_time.day):
+            # 跨天了，可以更新T+1相关信息
+            self.tradable = self.tradable + self.position # 更新可交易持仓
+
+        self.last_time = datetime.datetime.now()
+        return
+
+    def get_position(self): # 获取当前持仓
+        self.update()
+        return self.position
+
+    def get_primecost(self): # 获取当前持仓成本
+        self.update()
+        return self.primecost
+
+    def get_tradable(self): # 获取可卖出交易数量
+        return self.tradable - self.qi.sell_volume
+
+    def get_capital_quota(self): # 计算使用资金的比例
+        return round(self.qi.get_tolvalue() * 100 / self.startinfo.maximum_capital, 2)
+
+    def get_position_quota(self): # 计算当前持仓和可交易的比例
+        return round(self.qi.volume * 100 / self.tradable, 2)
+
+
 
     #########################################################################################
 
@@ -138,12 +234,6 @@ class calc:  # 计算工具类
         self.s = statistics # 当前状态信息
 
     #########################################################################################
-
-    def calc_cost(self, type, price, volume):
-        charge = self.calc_charge(type, price, volume)
-        primecost = (self.s.current_cost * self.s.position) + (price * volume) + charge # 总成本
-
-        return round(primecost / (self.s.position + volume), 3)
 
     def calc_profit(self, buy, sell, volume): # 计算区间收益
         charge_buy = self.calc_charge("buy", buy, volume)
