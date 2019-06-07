@@ -25,7 +25,7 @@ class startinfos: # 启动信息
         self.stock_name = "" # 股票名称
         self.stock_code = 0 # 股票代码
         self.minimum_profit = 300 # 单次交易最小盈利值
-        self.minimum_volume = 1000 # 单次交易数量
+        self.minimum_volume = 10000 # 单次交易数量
         self.maximum_capital = 1000000 # 动用最大资金
         self.old_position = 50000 # 存量老股，用于T+0
         self.premium_space = round(self.minimum_profit / self.minimum_volume, 2)
@@ -51,6 +51,10 @@ class qis: # 量化指标
     def __init__(self, statistics):
         self.s = statistics  # 当前状态信息
 
+        self.max_price_list = 5 # 记录价格均线的历史价格数据个数
+        self.last_price = [] # 最近的价格列表
+        self.average_price = 0 # 平均价格
+
         self.volume = 0  # 当前数量
         self.cost = 0 # 当前成本
 
@@ -64,6 +68,17 @@ class qis: # 量化指标
 
     def get_tolvalue(self): # 获取当前持仓市值
         return self.volume * self.cost
+
+    def update_average_price(self, marketinfos):
+        if (self.last_price.__len__() >= self.max_price_list):
+            self.last_price.pop(0)
+
+        self.last_price.append(marketinfos.now)
+        tolprice = 0
+        for num in range(0, self.last_price.__len__()):
+            tolprice += self.last_price[num]
+        self.average_price = round((tolprice / self.last_price.__len__()), 4)
+        return self.average_price
 
     def buy_update(self, price, volume):
         charge = self.s.calc.calc_charge("buy", price, volume)
@@ -94,7 +109,7 @@ class qis: # 量化指标
         return self.buy_volume - self.sell_volume
 
     def get_interval_income(self):
-        return self.sell_primecost - self.buy_primecost
+        return round(self.sell_primecost - self.buy_primecost, 2)
 
 class orders: # 交易信息
     def __init__(self):

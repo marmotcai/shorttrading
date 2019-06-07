@@ -13,12 +13,15 @@ class dss():
     def Decision(self, marketinfos):
 
         def buy(marketinfo):
-            if (self.stock_obj.s.get_capital_quota() > 80):
+            if (self.stock_obj.s.get_capital_quota() > 80): # 占用资金超过80%，不继续买入
                 return
-
-            price_diff = self.stock_obj.s.qi.buy_cost - marketinfo.now
+            price_diff = self.stock_obj.s.qi.average_price - marketinfo.now # 最新价格和均价的价格差，作为判断因素
             if (not self.stock_obj.s.qi.cost) or (price_diff > 0.03):
-                self.stock_obj.bid("buy", marketinfo, self.stock_obj.s.startinfo.minimum_volume) # 下买单
+
+                if (price_diff <= 0):
+                    price_diff = 0.01
+                volume = round(self.stock_obj.s.startinfo.minimum_volume * price_diff, 0)
+                self.stock_obj.bid("buy", marketinfo, volume) # 下买单
 
         def sell(marketinfo):
             if (self.stock_obj.s.get_tradable() <= 0):
@@ -72,12 +75,14 @@ class dss():
 
         self.stock_obj.s.update()
 
+        self.stock_obj.s.qi.update_average_price(marketinfos)
+
         buy(marketinfos)
 
-        if (self.stock_obj.s.get_tradable() > 0): # 判断是否还有卖出额度
-            sell(marketinfos)
+    #    if (self.stock_obj.s.get_tradable() > 0): # 判断是否还有卖出额度
+    #        sell(marketinfos)
 
-        print("最新价格：" + str(marketinfos.now))
+        print("最新价格：" + str(marketinfos.now) + " 当前均价：" + str(self.stock_obj.s.qi.average_price))
         print("当前资金用量：" + str(self.stock_obj.s.get_capital_quota()) + "%")
         print("当天可卖出：" + str(self.stock_obj.s.get_tradable()))
         print("当天买入：" + str(self.stock_obj.s.qi.buy_volume) + " 卖出：" + str(self.stock_obj.s.qi.sell_volume))
