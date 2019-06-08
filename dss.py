@@ -8,7 +8,9 @@ class dss():
     def __init__(self, obj):
 
         self.stock_obj = obj
-        self.income_unit = 0.03
+        self.income_unit = 0
+        if (self.stock_obj.test):
+            self.income_unit = 0.01
 
     def Decision(self, marketinfos):
 
@@ -25,19 +27,26 @@ class dss():
 
             self.stock_obj.s.qi.update()
 
+            if (self.income_unit == 0): # 计算最小的盈利区间
+                self.income_unit = round(marketinfo.now / 100, 2)
+
             price_diff = 0
             buy_volume = 0
             if (self.stock_obj.s.qi.volume < 0):
                 # 存在卖空单
                 price_diff = round(self.stock_obj.s.qi.sell_cost - marketinfo.now, 2)
-                buy_volume = self.stock_obj.s.qi.volume * -1
-                print("买空价差:" + str(price_diff))
+                if (price_diff > self.income_unit):
+                    buy_volume = round(self.stock_obj.s.startinfo.minimum_volume * ((price_diff - self.income_unit) * 100), 0)
+                    if (buy_volume > abs(self.stock_obj.s.qi.volume)): # 买的比卖空单还多
+                        buy_volume = abs(self.stock_obj.s.qi.volume)
+                    print("买空价差:" + str(price_diff))
             else:
                 price_diff = round(self.stock_obj.s.qi.average_price - marketinfo.now, 2) # 最新价格和均价的价格差，作为判断因素
-                buy_volume = round(self.stock_obj.s.startinfo.minimum_volume * price_diff, 0)
-                print("买入价差:" + str(price_diff))
+                if (price_diff > self.income_unit):
+                    buy_volume = round(self.stock_obj.s.startinfo.minimum_volume * ((price_diff - self.income_unit) * 100), 0)
+                    print("买入价差:" + str(price_diff))
 
-            if (price_diff > self.income_unit):
+            if (buy_volume > 0):
                 self.stock_obj.bid("buy", marketinfo, buy_volume)  # 下买单
 
         def sell(marketinfo):
@@ -47,21 +56,28 @@ class dss():
 
             self.stock_obj.s.qi.update()
 
+            if (self.income_unit == 0): # 计算最小的盈利区间
+                self.income_unit = round(marketinfo.now / 100, 2)
+
             price_diff = 0
             sell_volume = 0
             if (self.stock_obj.s.qi.volume > 0):
                 # 存在买单
                 price_diff = round(marketinfo.now - self.stock_obj.s.qi.buy_cost, 2)
-                sell_volume = self.stock_obj.s.qi.volume
-                print("卖出价差:" + str(price_diff) + " 买入成本:" + str(self.stock_obj.s.qi.buy_cost), " 存量:" + str(sell_volume))
+                if (price_diff > self.income_unit):
+                    sell_volume = round(self.stock_obj.s.startinfo.minimum_volume * ((price_diff - self.income_unit) * 100), 0)
+                    if (sell_volume > self.stock_obj.s.qi.volume): # 卖的比存货还多
+                        sell_volume = self.stock_obj.s.qi.volume
+                    print("卖出价差:" + str(price_diff) + " 买入成本:" + str(self.stock_obj.s.qi.buy_cost), " 存量:" + str(sell_volume))
             else:
                 if (self.stock_obj.short_selling):
                     # 卖空操作
                     price_diff = round(marketinfo.now - self.stock_obj.s.qi.average_price,2)
-                    sell_volume = round(self.stock_obj.s.startinfo.minimum_volume * price_diff, 0)
-                    print("卖空价差:" + str(price_diff))
+                    if (price_diff > self.income_unit):
+                        sell_volume = round(self.stock_obj.s.startinfo.minimum_volume * price_diff, 0)
+                        print("卖空价差:" + str(price_diff))
 
-            if (price_diff > self.income_unit):
+            if (sell_volume > 0):
                 if (sell_volume > self.stock_obj.s.get_tradable()):
                     sell_volume = self.stock_obj.s.get_tradable()
                 self.stock_obj.bid("sell", marketinfo, sell_volume)  # 下卖单

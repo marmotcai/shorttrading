@@ -59,7 +59,7 @@ class RequestHandler(hs.BaseHTTPRequestHandler):
 if __name__ == '__main__':
 
     # stocks_code = ['601988', '601939', '601398', '300096']
-    stocks_code = ['601988']
+    stocks_code = ['300096']
     stocks_obj = {}
 
     for num in range(0, stocks_code.__len__()):
@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
         startinfo.set_stock_code(stocks_code[num]) # 股票代码
         startinfo.set_minimum_profit(100) # 单次交易最小盈利
-        startinfo.set_minimum_volume(30000) # 单次交易数量
+        startinfo.set_minimum_volume(500) # 单次交易数量
         startinfo.set_maximum_capital(100000) # 资金总额
         startinfo.set_old_position(50000) # 存量老股，用于T+0
 

@@ -25,7 +25,7 @@ class startinfos: # 启动信息
         self.stock_name = "" # 股票名称
         self.stock_code = 0 # 股票代码
         self.minimum_profit = 300 # 单次交易最小盈利值
-        self.minimum_volume = 10000 # 单次交易数量
+        self.minimum_volume = 1000 # 单次交易数量
         self.maximum_capital = 1000000 # 动用最大资金
         self.old_position = 50000 # 存量老股，用于T+0
         self.premium_space = round(self.minimum_profit / self.minimum_volume, 2)
