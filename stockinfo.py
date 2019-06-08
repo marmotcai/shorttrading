@@ -51,6 +51,7 @@ class qis: # 量化指标
     def __init__(self, statistics):
         self.s = statistics  # 当前状态信息
 
+        self.capital = self.s.startinfo.maximum_capital # 当前资金
         self.max_price_list = 5 # 记录价格均线的历史价格数据个数
         self.last_price = [] # 最近的价格列表
         self.average_price = 0 # 平均价格
@@ -65,6 +66,9 @@ class qis: # 量化指标
         self.sell_volume = 0 # 卖出总量
         self.sell_primecost = 0  # 卖出总成本
         self.sell_cost = 0 # 卖出单价成本
+
+    def get_last_price(self):
+        return self.last_price[self.last_price.__len__() - 1]
 
     def get_tolvalue(self): # 获取当前持仓市值
         return self.volume * self.cost
@@ -82,34 +86,48 @@ class qis: # 量化指标
 
     def buy_update(self, price, volume):
         charge = self.s.calc.calc_charge("buy", price, volume)
-        self.buy_primecost = (self.buy_volume * self.buy_cost) + (price * volume) + charge  # 总成本
+        capital = price * volume
+        self.buy_primecost = (self.buy_volume * self.buy_cost) + capital + charge # 总成本
+        self.capital -= capital
+        self.capital -= charge
+        self.capital = round(self.capital, 2)
 
         self.buy_volume += volume
         self.buy_cost = round(self.buy_primecost / (self.buy_volume), 5)
 
-        self.update()
-
     def sell_update(self, price, volume):
         charge = self.s.calc.calc_charge("sell", price, volume)
-        self.sell_primecost = (self.sell_volume * self.sell_cost) + (price * volume) - charge  # 总成本
+        capital = price * volume
+        self.sell_primecost = (self.sell_volume * self.sell_cost) + capital + charge # 总成本
+        self.capital += capital
+        self.capital -= charge
+        self.capital = round(self.capital, 2)
 
         self.sell_volume += volume
         self.sell_cost = round(self.sell_primecost / (self.sell_volume), 5)
 
-        self.update()
-
     def update(self):
         self.volume = self.buy_volume - self.sell_volume
-        if (self.volume > 0):
+        if (self.volume != 0):
             self.cost = round((self.buy_primecost - self.sell_primecost) / self.volume, 5)
         else:
             self.cost = 0
+            self.buy_volume = 0
+            self.buy_cost = 0
+            self.sell_volume = 0
+            self.sell_cost = 0
 
-    def get_interval_volume(self):
-        return self.buy_volume - self.sell_volume
+    def get_interval_volume(self): # 股票存量
+        return round(self.buy_volume - self.sell_volume, 0)
+
+    def get_interval_capital(self): # 资金存量
+        return round(self.capital, 2)
 
     def get_interval_income(self):
-        return round(self.sell_primecost - self.buy_primecost, 2)
+        interval_income = self.get_interval_capital() - self.s.startinfo.maximum_capital # 资金存量
+        interval_income += self.get_interval_volume() * self.get_last_price() # 股票存量
+
+        return round(interval_income, 2)
 
 class orders: # 交易信息
     def __init__(self):
@@ -175,6 +193,11 @@ class statistics: # 当前状态信息
             self.position = self.position - order.volume  # 计算卖出总持仓
             self.primecost = self.primecost - order.get_primecost()  # 计算卖出总成本
             self.sell_charge = self.sell_charge + order.charge
+
+        self.position = round(self.position, 0)
+        self.primecost = round(self.primecost, 2)
+        self.buy_charge = round(self.buy_charge, 2)
+        self.sell_charge = round(self.sell_charge, 2)
 
         yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
         if (yesterday.day == self.last_time.day):

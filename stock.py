@@ -38,10 +38,10 @@ class BaseStock():
             return order
 
         def bid_buy(price, volume):
-            print("==>开始下单买入,价格：" + str(price), " 数量: " + str(volume))
             order = new_order("buy", price, volume)
             self.s.buy_order[order.price] = order
             self.s.qi.buy_update(price, volume)
+            print("==> 开始下单买入,价格：" + str(price), " 数量: " + str(volume) + " 平均买入均价:" + str(self.s.qi.buy_cost))
             #self.s.buy_volume = self.s.buy_volume + volume
             #self.s.buy_charge = self.s.buy_charge + order.charge
             #self.s.buy_charge = round(self.s.buy_charge, 2)
@@ -49,10 +49,10 @@ class BaseStock():
             return order
 
         def bid_sell(price, volume):
-            print("<==开始下单卖出,价格：" + str(price), " 数量: " + str(volume))
             order = new_order("sell", price, volume)
             self.s.sell_order[order.price] = order
             self.s.qi.sell_update(price, volume)
+            print("<== 开始下单卖出,价格：" + str(price), " 数量: " + str(volume) + " 平均卖出均价:" + str(self.s.qi.sell_cost))
             #self.s.sell_volume = self.s.sell_volume + volume
             #self.s.sell_charge = self.s.sell_charge + order.charge
             #self.s.sell_charge = round(self.s.sell_charge, 2)
