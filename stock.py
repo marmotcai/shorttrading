@@ -11,6 +11,7 @@ class BaseStock():
 
     def __init__(self, startinfos):
         self.test = 1
+        self.short_selling = 0
         self.quotation = easyquotation.use('sina')
 
         self.s = stockinfo.statistics(startinfos) # 状态信息

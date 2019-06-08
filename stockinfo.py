@@ -87,18 +87,24 @@ class qis: # 量化指标
     def buy_update(self, price, volume):
         charge = self.s.calc.calc_charge("buy", price, volume)
         capital = price * volume
+
         self.buy_primecost = (self.buy_volume * self.buy_cost) + capital + charge # 总成本
+
         self.capital -= capital
         self.capital -= charge
-        self.capital = round(self.capital, 2)
+        self.capital = round(self.capital, 5)
 
         self.buy_volume += volume
         self.buy_cost = round(self.buy_primecost / (self.buy_volume), 5)
 
+        self.s.buy_tolvolume += volume
+
     def sell_update(self, price, volume):
         charge = self.s.calc.calc_charge("sell", price, volume)
         capital = price * volume
+
         self.sell_primecost = (self.sell_volume * self.sell_cost) + capital + charge # 总成本
+
         self.capital += capital
         self.capital -= charge
         self.capital = round(self.capital, 2)
@@ -106,16 +112,20 @@ class qis: # 量化指标
         self.sell_volume += volume
         self.sell_cost = round(self.sell_primecost / (self.sell_volume), 5)
 
+        self.s.sell_tolvolume += volume
+
     def update(self):
         self.volume = self.buy_volume - self.sell_volume
         if (self.volume != 0):
             self.cost = round((self.buy_primecost - self.sell_primecost) / self.volume, 5)
         else:
             self.cost = 0
-            self.buy_volume = 0
             self.buy_cost = 0
-            self.sell_volume = 0
+            self.buy_volume = 0
+            self.buy_primecost = 0
             self.sell_cost = 0
+            self.sell_volume = 0
+            self.sell_primecost = 0
 
     def get_interval_volume(self): # 股票存量
         return round(self.buy_volume - self.sell_volume, 0)
@@ -164,6 +174,8 @@ class statistics: # 当前状态信息
         self.primecost = 0 # 当前总成本
         self.tolvalue = 0 # 当前市值
         self.tradable = startinfos.old_position # 可卖出交易数量
+        self.buy_tolvolume = 0  # 当天买入总量
+        self.sell_tolvolume = 0  # 当天卖出总量
         self.floating_income = 0  # 浮动收益，代表市值和成本差
         self.interval_income = 0  # 区间收益，代表波段操作收益
         self.last_time = datetime.datetime.now() # 记录上次的日期和时间
@@ -203,6 +215,8 @@ class statistics: # 当前状态信息
         if (yesterday.day == self.last_time.day):
             # 跨天了，可以更新T+1相关信息
             self.tradable = self.tradable + self.position # 更新可交易持仓
+            self.buy_tolvolume = 0  # 买入总量
+            self.sell_tolvolume = 0  # 卖出总量
 
         self.last_time = datetime.datetime.now()
         return
@@ -216,7 +230,7 @@ class statistics: # 当前状态信息
         return self.primecost
 
     def get_tradable(self): # 获取可卖出交易数量
-        return self.tradable - self.qi.sell_volume
+        return self.tradable - self.sell_tolvolume
 
     def get_capital_quota(self): # 计算使用资金的比例
         return round(self.qi.get_tolvalue() * 100 / self.startinfo.maximum_capital, 2)
@@ -224,10 +238,7 @@ class statistics: # 当前状态信息
     def get_position_quota(self): # 计算当前持仓和可交易的比例
         return round(self.qi.volume * 100 / self.tradable, 2)
 
-
-
     #########################################################################################
-
 
     def get_state_htmlitem(self):
         stateinfo = ""

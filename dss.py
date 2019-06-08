@@ -12,7 +12,13 @@ class dss():
 
     def Decision(self, marketinfos):
 
+        #########################################################################################
+
         def buy(marketinfo):
+            if (self.stock_obj.s.get_tradable() <= 0):
+                print("没有可卖出额度,停止买入")
+                return
+
             if (self.stock_obj.s.get_capital_quota() > 80): # 占用资金超过80%，不继续买入
                 print("资金用量已经超过临界值，暂时停止买入")
                 return
@@ -49,13 +55,18 @@ class dss():
                 sell_volume = self.stock_obj.s.qi.volume
                 print("卖出价差:" + str(price_diff) + " 买入成本:" + str(self.stock_obj.s.qi.buy_cost), " 存量:" + str(sell_volume))
             else:
-                # 卖空操作
-                price_diff = round(marketinfo.now - self.stock_obj.s.qi.average_price,2)
-                sell_volume = round(self.stock_obj.s.startinfo.minimum_volume * price_diff, 0)
-                print("卖空价差:" + str(price_diff))
+                if (self.stock_obj.short_selling):
+                    # 卖空操作
+                    price_diff = round(marketinfo.now - self.stock_obj.s.qi.average_price,2)
+                    sell_volume = round(self.stock_obj.s.startinfo.minimum_volume * price_diff, 0)
+                    print("卖空价差:" + str(price_diff))
 
             if (price_diff > self.income_unit):
+                if (sell_volume > self.stock_obj.s.get_tradable()):
+                    sell_volume = self.stock_obj.s.get_tradable()
                 self.stock_obj.bid("sell", marketinfo, sell_volume)  # 下卖单
+
+        #########################################################################################
 
         def judge_buy(marketinfo):
             for b in self.stock_obj.s.sell_order: # 检查是否有卖出单可以买回获利的
@@ -103,7 +114,7 @@ class dss():
         print("最新价格：" + str(marketinfos.now) + " 当前均价：" + str(self.stock_obj.s.qi.average_price))
         print("当前成本:" + str(self.stock_obj.s.qi.cost) + " 数量:" + str(self.stock_obj.s.qi.volume))
         print("当前买入成本:" + str(self.stock_obj.s.qi.buy_cost) + " 当前卖出成本:" + str(self.stock_obj.s.qi.sell_cost))
-        print("当天买入：" + str(self.stock_obj.s.qi.buy_volume) + " 卖出：" + str(self.stock_obj.s.qi.sell_volume))
+        print("当天买入：" + str(self.stock_obj.s.buy_tolvolume) + " 卖出：" + str(self.stock_obj.s.sell_tolvolume))
         print("资金可用：" + str(self.stock_obj.s.qi.capital), " 资金比例：" + str(self.stock_obj.s.get_capital_quota()) + "%")
         print("可卖出额度：" + str(self.stock_obj.s.get_tradable()))
         print("区间存量：" + str(self.stock_obj.s.qi.get_interval_volume()) + " 区间收益：" + str(self.stock_obj.s.qi.get_interval_income()))
