@@ -10,8 +10,8 @@ import time
 class BaseStock():
 
     def __init__(self, startinfos):
-        self.test = 1
-        self.short_selling = 0 #　是否允许卖空
+        self.test = 0
+        self.short_selling = 1 #　是否允许卖空
         self.quotation = easyquotation.use('sina')
 
         self.s = stockinfo.statistics(startinfos) # 状态信息
@@ -99,7 +99,7 @@ class BaseStock():
 
             #  测试用，随机价格
             if (self.test == 1):
-                self.s.marketinfo.now = self.s.marketinfo.now + round(random.randrange(-10, 10) / 100, 2)
+                self.s.marketinfo.now = self.s.marketinfo.now + round(random.randrange(-3, 3) / 100, 2)
                 self.s.marketinfo.now = round(self.s.marketinfo.now, 2)
 
             print("----------决策分析--------")

@@ -47,6 +47,12 @@ class startinfos: # 启动信息
     def set_old_position(self, old_position):
         self.old_position = old_position
 
+class stock: #存量股票信息
+    def __init__(self):
+        self.volume = 0 # 总量
+        self.price = 0 # 平均单价
+        self.charge = 0 # 税费
+
 class qis: # 量化指标
     def __init__(self, statistics):
         self.s = statistics  # 当前状态信息
@@ -68,12 +74,17 @@ class qis: # 量化指标
         self.sell_cost = 0 # 卖出单价成本
 
     def get_last_price(self):
+        if (self.last_price.__len__() <= 0):
+            return 0
         return self.last_price[self.last_price.__len__() - 1]
 
     def get_tolvalue(self): # 获取当前持仓市值
         return self.volume * self.cost
 
     def update_average_price(self, marketinfos):
+        if (self.get_last_price() == marketinfos.now):
+            return
+
         if (self.last_price.__len__() >= self.max_price_list):
             self.last_price.pop(0)
 
@@ -88,12 +99,11 @@ class qis: # 量化指标
         charge = self.s.calc.calc_charge("buy", price, volume)
         capital = price * volume
 
-        self.buy_primecost = (self.buy_volume * self.buy_cost) + capital + charge # 总成本
-
         self.capital -= capital
         self.capital -= charge
         self.capital = round(self.capital, 5)
 
+        self.buy_primecost = (self.buy_volume * self.buy_cost) + capital + charge # 买入耗费总成本
         self.buy_volume += volume
         self.buy_cost = round(self.buy_primecost / (self.buy_volume), 5)
 
@@ -103,12 +113,11 @@ class qis: # 量化指标
         charge = self.s.calc.calc_charge("sell", price, volume)
         capital = price * volume
 
-        self.sell_primecost = (self.sell_volume * self.sell_cost) + capital + charge # 总成本
-
         self.capital += capital
         self.capital -= charge
         self.capital = round(self.capital, 2)
 
+        self.sell_primecost = (self.sell_volume * self.sell_cost) + capital - charge # 卖出总成本
         self.sell_volume += volume
         self.sell_cost = round(self.sell_primecost / (self.sell_volume), 5)
 
@@ -249,31 +258,36 @@ class statistics: # 当前状态信息
             stateinfo += "<div>" + str(self.startinfo.stock_name) + " (" + self.startinfo.stock_code + ")</div>"
 
         stateinfo += "<div>当前价格: " + str(self.marketinfo.now) + "</div>"
-        stateinfo += "<div>成本单价: " + str(self.current_cost) + "</div>"
-        stateinfo += "<div>总持仓: " + str(self.position) + "</div>"
-        stateinfo += "<div>成本: " + str(self.primecost) + "</div>"
-        stateinfo += "<div>市值: " + str(self.tolvalue) + "</div>"
+        stateinfo += "<div>当前均价: " + str(self.qi.average_price) + "</div>"
+        stateinfo += "<div>成本单价: " + str(self.qi.cost) + "</div>"
+        stateinfo += "<div>总持仓: " + str(self.qi.volume) + "</div>"
+        stateinfo += "<div>当前买入成本:" + str(self.qi.buy_cost) + "</div>"
+        stateinfo += "<div>当前卖出成本:" + str(self.qi.sell_cost) + "</div>"
+        stateinfo += "<div>当天买入：" + str(self.buy_tolvolume) + "</div>"
+        stateinfo += "<div>当天卖出：" + str(self.sell_tolvolume) + "</div>"
         stateinfo += "<div>买入总税费: " + str(self.buy_charge) + "</div>"
         stateinfo += "<div>卖出总税费: " + str(self.sell_charge) + "</div>"
-        stateinfo += "<div>当前买入单: " + str(self.buy_order.__len__()) + "/" + str(self.buy_count) + "</div>"
-        stateinfo += "<div>当前卖出单: " + str(self.sell_order.__len__()) + "/" + str(self.sell_count) + "</div>"
-        stateinfo += "<div>交易次数: " + str(self.bid.__len__()) + "</div>"
+        stateinfo += "<div>资金可用：" + str(self.qi.capital) + "</div>"
+        stateinfo += "<div>资金比例：" + str(self.get_capital_quota()) + "%" + "</div>"
+        stateinfo += "<div>可卖出额度：" + str(self.get_tradable()) + "</div>"
+        stateinfo += "<div>区间存量：" + str(self.qi.get_interval_volume()) + "</div>"
+        stateinfo += "<div>区间收益：" + str(self.qi.get_interval_income()) + "</div>"
 
-        if (self.floating_income > 0):
-            stateinfo += "<div>浮动盈亏: <span style=\"color:red;\">" + str(self.floating_income) + "</span></div>"
-        else:
-            stateinfo += "<div>浮动盈亏: <span style=\"color:green;\">" + str(self.floating_income) + "</span></div>"
-
-        if (self.interval_income > 0):
-            stateinfo += "<div>波段盈亏: <span style=\"color:red;\">" + str(self.interval_income) + "</span></div>"
-        else:
-            stateinfo += "<div>波段盈亏: <span style=\"color:green;\">" + str(self.interval_income) + "</span></div>"
-
-        income = round(self.floating_income + self.interval_income, 2)
-        if (income > 0):
-            stateinfo += "<div>总盈亏: <span style=\"color:red;\">" + str(income) + "</span></div>"
-        else:
-            stateinfo += "<div>总盈亏: <span style=\"color:green;\">" + str(income) + "</span></div>"
+    #    if (self.floating_income > 0):
+    #        stateinfo += "<div>浮动盈亏: <span style=\"color:red;\">" + str(self.floating_income) + "</span></div>"
+    #    else:
+    #        stateinfo += "<div>浮动盈亏: <span style=\"color:green;\">" + str(self.floating_income) + "</span></div>"
+#
+    #    if (self.interval_income > 0):
+    #        stateinfo += "<div>波段盈亏: <span style=\"color:red;\">" + str(self.interval_income) + "</span></div>"
+    #    else:
+    #        stateinfo += "<div>波段盈亏: <span style=\"color:green;\">" + str(self.interval_income) + "</span></div>"
+#
+    #    income = round(self.floating_income + self.interval_income, 2)
+    #    if (income > 0):
+    #        stateinfo += "<div>总盈亏: <span style=\"color:red;\">" + str(income) + "</span></div>"
+    #    else:
+    #        stateinfo += "<div>总盈亏: <span style=\"color:green;\">" + str(income) + "</span></div>"
 
         return stateinfo
 
