@@ -74,6 +74,7 @@ class BaseStock():
     #########################################################################################
 
     def run(self):
+
         # for num in range(1, 1000):
         while True:
             if (self.test <= 0) and (not stockinfo.istringtime()):

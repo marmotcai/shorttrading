@@ -5,6 +5,21 @@ import stock
 import threading
 import http.server as hs
 
+import pandas as pd
+from matplotlib import pyplot as plt
+
+#########################################################################################
+
+datafile = "./data/stock.csv"
+
+class Learning():
+
+    def __init__(self, data_file):
+        self.loaddata(data_file)
+
+    def loaddata(self, data_file):
+        # Import data
+        self.data = pd.read_csv(data_file)
 
 #########################################################################################
 
@@ -58,9 +73,26 @@ class RequestHandler(hs.BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
 
+    learning = Learning(datafile)
+
+    exit(0)
+
     # stocks_code = ['601988', '601939', '601398', '300096']
     stocks_code = ['300096']
     stocks_obj = {}
+
+    input_values = [1, 2, 3, 4, 5]  # 指定输入参数
+    squares = [1, 4, 9, 16, 25]  # 指定输出参数
+    plt.plot(input_values, squares, linewidth=5)  # 调用绘制函数，传入输入参数和输出参数
+
+    plt.title("Stock Quotes", fontsize=16)  # 指定标题，并设置标题字体大小
+    plt.xlabel("time", fontsize=12)  # 指定X坐标轴的标签，并设置标签字体大小
+    plt.ylabel("prices", fontsize=12)  # 指定Y坐标轴的标签，并设置标签字体大小
+    plt.tick_params(axis='both', labelsize=12)  # 参数axis值为both，代表要设置横纵的刻度标记，标记大小为14
+    plt.show()
+
+    exit(0)
+
 
     for num in range(0, stocks_code.__len__()):
 
