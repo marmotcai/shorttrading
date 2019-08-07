@@ -3,8 +3,6 @@ from __future__ import print_function
 import math
 
 from IPython import display
-from matplotlib import cm
-from matplotlib import gridspec
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
@@ -12,14 +10,84 @@ from sklearn import metrics
 import tensorflow as tf
 from tensorflow.python.data import Dataset
 
-tf.logging.set_verbosity(tf.logging.ERROR)
-pd.options.display.max_rows = 10
-pd.options.display.float_format = '{:.1f}'.format
+import keras
+import keras as ks
+from keras import initializers,models,layers
+from keras.preprocessing import sequence
+from keras.models import Sequential,load_model
+from keras.layers import Dense, Input, Dropout, Embedding, LSTM, Bidirectional,Activation,SimpleRNN,Conv1D,MaxPooling1D, GlobalMaxPooling1D,GlobalAveragePooling1D
 
-device_name = tf.test.gpu_device_name()
-if device_name != '/device:GPU:0':
-  raise SystemError('GPU device not found')
-print('Found GPU at: {}'.format(device_name))
+import ztools as zt
+
+################################################################################
+
+rlog='./log_tmp'
+
+################################################################################
+
+class  train_data():
+    def __init__(self, data_dir, data_file):
+        self.data_dir = data_dir
+        self.data_file = data_file
+        self.df = pd.read_csv(data_dir + data_file, index_col=0)
+
+    def prepared(self):
+        self.df = self.df.sort_values('date') #日期排序
+
+        self.df['max_price_range'] = self.df['high'].sub(self.df['low']) #计算当天最大价格差
+        self.df['range_price_type'] = self.df['max_price_range'].apply(zt.iff3type, d0=0.05, d9=0.1, v3=3, v2=2, v1=1)
+
+class train():
+    def __init__(self, train_data):
+        self.data_obj = train_data
+
+    def training(self, num_in=10, num_out=1):
+        self.model = Sequential()
+        self.model.add(Dense(num_in * 4, input_dim=num_in, activation='relu'))
+        self.model.add(Dense(num_out))
+        #
+        # mean_squared_error
+        self.model.compile('adam', 'mse', metrics=['acc'])
+
+        tbCallBack = keras.callbacks.TensorBoard(log_dir=rlog, write_graph=True, write_images=True)
+
+        x_train, y_train = self.data_obj.df['open'].values, self.data_obj.df['max_price_range'].values
+
+        self.model.fit(x_train, y_train, epochs=500, batch_size=512, callbacks=[tbCallBack])
+
+
+################################################################################
+
+def testing():
+    device_name = tf.test.gpu_device_name()
+    if device_name != '/device:GPU:0':
+        raise SystemError('GPU device not found')
+    print('Found GPU at: {}'.format(device_name))
+
+def load():
+    data_obj = train_data("./data/", "601988.csv")
+    data_obj.prepared()
+    print(data_obj.df.tail(10))
+
+    return data_obj
+
+def init():
+    # testing()
+    #
+    # tf.logging.set_verbosity(tf.logging.ERROR)
+    # pd.options.display.max_rows = 10
+    # pd.options.display.float_format = '{:.1f}'.format
+    pd.set_option('display.max_rows', 10)
+    pd.set_option('display.width', 450)
+    pd.set_option('display.float_format', zt.xfloat5)
+
+################################################################################
+
+init()
+data_obj = load()
+train_obj = train(data_obj)
+train_obj.training()
+exit(0)
 
 california_housing_dataframe = pd.read_csv("./data/california_housing_train.csv", sep=",")
 
