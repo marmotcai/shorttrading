@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import math
-
+import arrow
 from IPython import display
 from matplotlib import pyplot as plt
 import numpy as np
@@ -16,12 +16,15 @@ from keras import initializers,models,layers
 from keras.preprocessing import sequence
 from keras.models import Sequential,load_model
 from keras.layers import Dense, Input, Dropout, Embedding, LSTM, Bidirectional,Activation,SimpleRNN,Conv1D,MaxPooling1D, GlobalMaxPooling1D,GlobalAveragePooling1D
+from keras.utils import plot_model
 
 import ztools as zt
+import ztools_data as zdat
 
 ################################################################################
 
-rlog='./log_tmp'
+default_datadir = './data/'
+rlog = './log_tmp/'
 
 ################################################################################
 
@@ -37,25 +40,46 @@ class  train_data():
         self.df['max_price_range'] = self.df['high'].sub(self.df['low']) #计算当天最大价格差
         self.df['range_price_type'] = self.df['max_price_range'].apply(zt.iff3type, d0=0.05, d9=0.1, v3=3, v2=2, v1=1)
 
+        dnum = len(self.df.index)
+        dnum2 = round(dnum * 0.6)
+
+        self.df_train = self.df.head(dnum2)
+        self.df_test = self.df.tail(dnum - dnum2)
+
 class train():
     def __init__(self, train_data):
         self.data_obj = train_data
 
-    def training(self, num_in=10, num_out=1):
+    def training(self, num_in=1, num_out=1):
         self.model = Sequential()
         self.model.add(Dense(num_in * 4, input_dim=num_in, activation='relu'))
         self.model.add(Dense(num_out))
         #
         # mean_squared_error
         self.model.compile('adam', 'mse', metrics=['acc'])
+        self.model.summary()
+
+        plot_model(self.model, to_file = rlog + 'mx_training.png')
 
         tbCallBack = keras.callbacks.TensorBoard(log_dir=rlog, write_graph=True, write_images=True)
 
-        x_train, y_train = self.data_obj.df['open'].values, self.data_obj.df['max_price_range'].values
+        x_train, y_train = self.data_obj.df_train['open'].values, self.data_obj.df_train['range_price_type'].values
+        x_test, y_test = self.data_obj.df_test['open'].values, self.data_obj.df_test['range_price_type'].values
 
         self.model.fit(x_train, y_train, epochs=500, batch_size=512, callbacks=[tbCallBack])
 
+        tn0 = arrow.now()
+        y_pred = self.model.predict(x_test)
+        tn = zt.timNSec('', tn0, True)
+        self.data_obj.df_test['y_pred'] = zdat.ds4x(y_pred, self.data_obj.df_test.index, True)
+        self.data_obj.df_test.to_csv(rlog + 'df_tst.csv', index=False)
 
+    def draw(self):
+        df_draw = pd.DataFrame()
+        df_draw['range_price_type'] = self.data_obj.df_test['range_price_type']
+        df_draw['y_pred'] = self.data_obj.df_test['y_pred']
+        df_draw.plot()
+        plt.show()
 ################################################################################
 
 def testing():
@@ -64,8 +88,8 @@ def testing():
         raise SystemError('GPU device not found')
     print('Found GPU at: {}'.format(device_name))
 
-def load():
-    data_obj = train_data("./data/", "601988.csv")
+def load(filename):
+    data_obj = train_data(default_datadir, filename)
     data_obj.prepared()
     print(data_obj.df.tail(10))
 
@@ -84,9 +108,11 @@ def init():
 ################################################################################
 
 init()
-data_obj = load()
+data_obj = load("601988.csv")
 train_obj = train(data_obj)
 train_obj.training()
+train_obj.draw()
+
 exit(0)
 
 california_housing_dataframe = pd.read_csv("./data/california_housing_train.csv", sep=",")
