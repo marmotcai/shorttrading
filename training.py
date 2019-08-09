@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import os
 import math
 import arrow
 from IPython import display
@@ -18,33 +19,124 @@ from keras.models import Sequential,load_model
 from keras.layers import Dense, Input, Dropout, Embedding, LSTM, Bidirectional,Activation,SimpleRNN,Conv1D,MaxPooling1D, GlobalMaxPooling1D,GlobalAveragePooling1D
 from keras.utils import plot_model
 
+import zsys
 import ztools as zt
 import ztools_data as zdat
+import ztools_datadown as zddown
+import zai_keras as zks
 
 ################################################################################
 
 default_datadir = './data/'
-rlog = './log_tmp/'
+default_logdir = '../logs/'
+
+ohlc_lst = ['open', 'high', 'low', 'close']
+
+################################################################################
+
+def mkdir(path):
+    # 去除首位空格
+    path = path.strip()
+    # 去除尾部 \ 符号
+    path = path.rstrip("\\")
+    # 判断结果
+    if not os.path.exists(path):
+        # 如果不存在则创建目录
+        os.makedirs(path)
+        return True
+    else:
+        return False
+
+################################################################################
+
+class down_data():
+    def __init__(self, data_dir = default_datadir):
+        self.data_dir = data_dir
+        self.rss = self.data_dir + 'xday/'
+
+        mkdir(self.rss)
+
+    def download_inx(self, filename = "inx_index.csv"):
+        finx = self.data_dir + filename
+        zddown.down_stk_inx(self.rss, finx);
+
+    def downlaod_stk(self, filename = "stk_index.csv"):
+        xtyp = '5'
+        finx = self.data_dir + filename;
+        zddown.down_stk_all(self.rss, finx, xtyp)
 
 ################################################################################
 
 class  train_data():
+
     def __init__(self, data_dir, data_file):
         self.data_dir = data_dir
         self.data_file = data_file
-        self.df = pd.read_csv(data_dir + data_file, index_col=0)
+        self.df = pd.read_csv(data_dir + data_file, index_col = 0)
 
     def prepared(self):
         self.df = self.df.sort_values('date') #日期排序
 
-        self.df['max_price_range'] = self.df['high'].sub(self.df['low']) #计算当天最大价格差
-        self.df['range_price_type'] = self.df['max_price_range'].apply(zt.iff3type, d0=0.05, d9=0.1, v3=3, v2=2, v1=1)
+        self.df['max_price_range'] = self.df['high'].sub(self.df['low']) # 当天价格差额
+        self.df['ohlc_avg'] = self.df[ohlc_lst].mean(axis = 1) # 当天OHLC均值
+        self.df['range_price_type'] = self.df['max_price_range'].apply(zt.iff3type, d0=0.05, d9=0.1, v3=3, v2=2, v1=1) # 差价分类器
+
+        ## 计算第二天的数据
+        self.df['next_open'] = self.df['open'].shift(-1)
+        self.df['next_max_price_range'] = self.df['max_price_range'].shift(-1)
+        self.df['next_ohlc_avg'] = self.df['ohlc_avg'].shift(-1)
+        self.df['next_range_price_type'] = self.df['range_price_type'].shift(-1)
 
         dnum = len(self.df.index)
         dnum2 = round(dnum * 0.6)
 
         self.df_train = self.df.head(dnum2)
         self.df_test = self.df.tail(dnum - dnum2)
+
+        # 特征
+        other_features_lst = ohlc_lst + ['max_price_range', 'ohlc_avg', 'range_price_type', 'next_open', 'next_max_price_range', 'next_ohlc_avg']
+        self.x_train = self.df_train[other_features_lst].values
+        self.x_test = self.df_test[other_features_lst].values
+
+        # 标签
+        self.y_train, self.y_test = pd.get_dummies(self.df_train['next_range_price_type']).values, pd.get_dummies(self.df_test['next_range_price_type']).values
+        typ_lst = self.y_train[0]
+
+        xlst = other_features_lst
+
+        num_in, num_out = len(xlst), len(typ_lst)
+
+        print('\n self.df_test.tail()', self.df_test.tail())
+        print('\n self.x_train.shape,', self.x_train.shape)
+        print('\n type(self.x_train),', type(self.x_train))
+
+        rxn, txn = self.x_train.shape[0], self.x_test.shape[0]
+        self.x_train, self.x_test = self.x_train.reshape(rxn, num_in, -1), self.x_test.reshape(txn, num_in, -1)
+        print('\n x_train.shape,', self.x_train.shape)
+        print('\n type(x_train),', type(self.x_train))
+
+        print('\nnum_in,num_out:', num_in, num_out)
+        mx = zks.rnn010(num_in, num_out)
+        #
+        mx.summary()
+        plot_model(mx, to_file = default_datadir + 'rnn010.png')
+
+        print('\n#4 模型训练 fit')
+        tbCallBack = keras.callbacks.TensorBoard(log_dir = default_logdir, write_graph = True, write_images=True)
+        tn0 = arrow.now()
+        mx.fit(self.x_train, self.y_train, epochs = 500, batch_size = 512,callbacks = [tbCallBack])
+        tn = zt.timNSec('', tn0, True)
+
+        print('\n#5 模型预测 predict')
+        tn0 = arrow.now()
+        y_pred0 = mx.predict(self.x_test)
+        tn = zt.timNSec('', tn0, True)
+        #
+        y_pred = np.argmax(y_pred0, axis=1) + 1
+        self.df_test['y_pred'] = zdat.ds4x(y_pred, self.df_test.index, True)
+        self.df_test.to_csv(default_datadir + 'df_rnn010.csv', index = False)
+
+################################################################################
 
 class train():
     def __init__(self, train_data):
@@ -59,12 +151,12 @@ class train():
         self.model.compile('adam', 'mse', metrics=['acc'])
         self.model.summary()
 
-        plot_model(self.model, to_file = rlog + 'mx_training.png')
+        # plot_model(self.model, to_file = rlog + 'mx_training.png')
 
-        tbCallBack = keras.callbacks.TensorBoard(log_dir=rlog, write_graph=True, write_images=True)
+        tbCallBack = keras.callbacks.TensorBoard(log_dir = default_logdir, write_graph=True, write_images=True)
 
-        x_train, y_train = self.data_obj.df_train['open'].values, self.data_obj.df_train['range_price_type'].values
-        x_test, y_test = self.data_obj.df_test['open'].values, self.data_obj.df_test['range_price_type'].values
+        x_train, y_train = self.data_obj.df_train['max_price_range', 'ohlc_avg'].values, self.data_obj.df_train['next_range_price'].values
+        x_test, y_test = self.data_obj.df_test['max_price_range', 'ohlc_avg'].values, self.data_obj.df_test['next_range_price'].values
 
         self.model.fit(x_train, y_train, epochs=500, batch_size=512, callbacks=[tbCallBack])
 
@@ -72,7 +164,7 @@ class train():
         y_pred = self.model.predict(x_test)
         tn = zt.timNSec('', tn0, True)
         self.data_obj.df_test['y_pred'] = zdat.ds4x(y_pred, self.data_obj.df_test.index, True)
-        self.data_obj.df_test.to_csv(rlog + 'df_tst.csv', index=False)
+        self.data_obj.df_test.to_csv(default_logdir + 'df_tst.csv', index=False)
 
     def draw(self):
         df_draw = pd.DataFrame()
@@ -105,7 +197,14 @@ def init():
     pd.set_option('display.width', 450)
     pd.set_option('display.float_format', zt.xfloat5)
 
+    mkdir(default_datadir)
+    mkdir(default_logdir)
+
 ################################################################################
+
+# down_obj = down_data(default_datadir)
+# down_obj.download_inx()
+# down_obj.downlaod_stk()
 
 init()
 data_obj = load("601988.csv")
