@@ -20,6 +20,7 @@ from keras.layers import Dense, Input, Dropout, Embedding, LSTM, Bidirectional,A
 from keras.utils import plot_model
 
 import zsys
+import zpd_talib as zta
 import ztools as zt
 import ztools_data as zdat
 import ztools_datadown as zddown
@@ -28,7 +29,7 @@ import zai_keras as zks
 ################################################################################
 
 default_datadir = './data/'
-default_logdir = '../logs/'
+default_logdir = './data/logs/'
 
 ohlc_lst = ['open', 'high', 'low', 'close']
 
@@ -78,7 +79,9 @@ class  train_data():
         self.df = self.df.sort_values('date') #日期排序
 
         self.df['max_price_range'] = self.df['high'].sub(self.df['low']) # 当天价格差额
-        self.df['ohlc_avg'] = self.df[ohlc_lst].mean(axis = 1) # 当天OHLC均值
+        self.df['ohlc_avg'] = self.df[ohlc_lst].mean(axis = 1).round(2) # 当天OHLC均值
+        self.df = zta.mul_talib(zta.MA,  self.df, ksgn = 'ohlc_avg', vlst = zsys.ma100Lst_var)
+
         self.df['range_price_type'] = self.df['max_price_range'].apply(zt.iff3type, d0=0.05, d9=0.1, v3=3, v2=2, v1=1) # 差价分类器
 
         ## 计算第二天的数据
@@ -188,7 +191,7 @@ def load(filename):
     return data_obj
 
 def init():
-    # testing()
+    testing()
     #
     # tf.logging.set_verbosity(tf.logging.ERROR)
     # pd.options.display.max_rows = 10
