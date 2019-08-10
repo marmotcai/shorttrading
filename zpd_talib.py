@@ -176,7 +176,7 @@ def MA(df, n,ksgn='close'):
     ds5 = ds2.rolling(center=False,window=n).mean() 
     #print(ds5.head()); print(df.head())
     #
-    df = df.join(ds5)  
+    df = df.join(ds5)
     #
     return df
    

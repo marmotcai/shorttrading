@@ -24,6 +24,7 @@ import zpd_talib as zta
 import ztools as zt
 import ztools_data as zdat
 import ztools_datadown as zddown
+import ztools_tq as ztq
 import zai_keras as zks
 
 ################################################################################
@@ -32,6 +33,15 @@ default_datadir = './data/'
 default_logdir = './data/logs/'
 
 ohlc_lst = ['open', 'high', 'low', 'close']
+
+ma100_lst_var = [2, 3, 5, 10, 15, 20, 25, 30, 50, 100]
+ma100_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20', 'ma_25', 'ma_30', 'ma_50', 'ma_100']
+ma200_lst_var = [2, 3, 5, 10, 15, 20, 25, 30, 50, 100, 150, 200]
+ma200_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20','ma_30', 'ma_50', 'ma_100', 'ma_150', 'ma_200']
+ma030_lst_var = [2, 3, 5, 10, 15, 20, 25, 30]
+ma030_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20', 'ma_25', 'ma_30']
+
+xagv_lst = ['xavg1', 'xavg2','xavg3','xavg4','xavg5','xavg6','xavg7','xavg8','xavg9']
 
 ################################################################################
 
@@ -78,17 +88,27 @@ class  train_data():
     def prepared(self):
         self.df = self.df.sort_values('date') #日期排序
 
-        self.df['max_price_range'] = self.df['high'].sub(self.df['low']) # 当天价格差额
         self.df['ohlc_avg'] = self.df[ohlc_lst].mean(axis = 1).round(2) # 当天OHLC均值
-        self.df = zta.mul_talib(zta.MA,  self.df, ksgn = 'ohlc_avg', vlst = zsys.ma100Lst_var)
+        self.df['max_price_range'] = self.df['high'].sub(self.df['low']) # 当天价格差额
 
-        self.df['range_price_type'] = self.df['max_price_range'].apply(zt.iff3type, d0=0.05, d9=0.1, v3=3, v2=2, v1=1) # 差价分类器
+        self.df = zdat.df_xed_nextDay(self.df, ksgn = 'ohlc_avg', newSgn = 'xavg', nday=10) #均值
+
+        self.df = zta.mul_talib(zta.MA,  self.df, ksgn = 'ohlc_avg', vlst = zsys.ma100Lst_var) # ma
+
+        # self.df['range_price_type'] = self.df['max_price_range'].apply(zt.iff3type, d0=0.05, d9=0.1, v3=3, v2=2, v1=1) # 差价分类器
+        # self.df['next_range_price_type'] = self.df['range_price_type'].shift(-1)
 
         ## 计算第二天的数据
-        self.df['next_open'] = self.df['open'].shift(-1)
-        self.df['next_max_price_range'] = self.df['max_price_range'].shift(-1)
+        # self.df['next_open'] = self.df['open'].shift(-1)
         self.df['next_ohlc_avg'] = self.df['ohlc_avg'].shift(-1)
-        self.df['next_range_price_type'] = self.df['range_price_type'].shift(-1)
+        self.df['next_max_price_range'] = self.df['max_price_range'].shift(-1)
+
+        self.df['y'] = self.df['next_ohlc_avg']
+        # self.df['y'] = self.df['next_max_price_range']
+
+        # 清楚NaN值
+        self.df = self.df.fillna(method='pad')
+        self.df = self.df.fillna(method='bfill')
 
         dnum = len(self.df.index)
         dnum2 = round(dnum * 0.6)
@@ -97,17 +117,18 @@ class  train_data():
         self.df_test = self.df.tail(dnum - dnum2)
 
         # 特征
-        other_features_lst = ohlc_lst + ['max_price_range', 'ohlc_avg', 'range_price_type', 'next_open', 'next_max_price_range', 'next_ohlc_avg']
+        other_features_lst = ohlc_lst + xagv_lst + ma100_lst
         self.x_train = self.df_train[other_features_lst].values
         self.x_test = self.df_test[other_features_lst].values
 
         # 标签
-        self.y_train, self.y_test = pd.get_dummies(self.df_train['next_range_price_type']).values, pd.get_dummies(self.df_test['next_range_price_type']).values
-        typ_lst = self.y_train[0]
+        # self.y_train, self.y_test = pd.get_dummies(self.df_train['ohlc_avg']).values, pd.get_dummies(self.df_test['ohlc_avg']).values
+        # typ_lst = len(self.y_train[0])
+        self.y_train, self.y_test = self.df_train['y'], self.df_test['y']
+        typ_lst = 1
 
         xlst = other_features_lst
-
-        num_in, num_out = len(xlst), len(typ_lst)
+        num_in, num_out = len(xlst), typ_lst
 
         print('\n self.df_test.tail()', self.df_test.tail())
         print('\n self.x_train.shape,', self.x_train.shape)
@@ -118,26 +139,33 @@ class  train_data():
         print('\n x_train.shape,', self.x_train.shape)
         print('\n type(x_train),', type(self.x_train))
 
-        print('\nnum_in,num_out:', num_in, num_out)
-        mx = zks.rnn010(num_in, num_out)
+        print('\nnum_in,num_out:', num_in, 1) # num_out
+        # mx = zks.rnn010(num_in, num_out)
+        mx = zks.lstm010(num_in, num_out)
         #
         mx.summary()
-        plot_model(mx, to_file = default_datadir + 'rnn010.png')
+        plot_model(mx, to_file = default_datadir + 'model.png')
 
         print('\n#4 模型训练 fit')
         tbCallBack = keras.callbacks.TensorBoard(log_dir = default_logdir, write_graph = True, write_images=True)
         tn0 = arrow.now()
-        mx.fit(self.x_train, self.y_train, epochs = 500, batch_size = 512,callbacks = [tbCallBack])
+        mx.fit(self.x_train, self.y_train, epochs = 50, batch_size = 512, callbacks = [tbCallBack])
         tn = zt.timNSec('', tn0, True)
 
         print('\n#5 模型预测 predict')
         tn0 = arrow.now()
-        y_pred0 = mx.predict(self.x_test)
+        y_pred = mx.predict(self.x_test)
         tn = zt.timNSec('', tn0, True)
         #
-        y_pred = np.argmax(y_pred0, axis=1) + 1
         self.df_test['y_pred'] = zdat.ds4x(y_pred, self.df_test.index, True)
-        self.df_test.to_csv(default_datadir + 'df_rnn010.csv', index = False)
+        self.df_test.to_csv(default_datadir + 'my.csv', index = False)
+
+        print('NaN的数量:', self.df_test.isnull().sum().sum())
+
+        print('\n#6 acc准确度分析')
+        print('\nky0=10')
+
+        dacc, dfx, a10 = ztq.ai_acc_xed2ext(self.df_test.y, self.df_test.y_pred, ky0=10, fgDebug=True)
 
 ################################################################################
 
@@ -191,7 +219,7 @@ def load(filename):
     return data_obj
 
 def init():
-    testing()
+    # testing()
     #
     # tf.logging.set_verbosity(tf.logging.ERROR)
     # pd.options.display.max_rows = 10
@@ -211,9 +239,9 @@ def init():
 
 init()
 data_obj = load("601988.csv")
-train_obj = train(data_obj)
-train_obj.training()
-train_obj.draw()
+# train_obj = train(data_obj)
+# train_obj.training()
+# train_obj.draw()
 
 exit(0)
 
