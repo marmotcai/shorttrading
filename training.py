@@ -43,6 +43,8 @@ ma030_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20', 'ma_25', 'ma_30'
 
 xagv_lst = ['xavg1', 'xavg2','xavg3','xavg4','xavg5','xavg6','xavg7','xavg8','xavg9']
 
+other_lst = ['price_range', 'amp', 'amp_type']
+
 ################################################################################
 
 def mkdir(path):
@@ -85,28 +87,47 @@ class  train_data():
         self.data_file = data_file
         self.df = pd.read_csv(data_dir + data_file, index_col = 0)
 
+    def prepared_pre_next(self, df): # 填充前一天和后一天的值
+        df['next_open'] = self.df['open'].shift(-1)  # 后一天的开盘价
+        df['pre_close'] = self.df['close'].shift(1)  # 前一天收盘价
+
+        return df
+
+    def prepared_avg(self, df): # 计算均值
+        df['ohlc_avg'] = df[ohlc_lst].mean(axis = 1).round(2) # 当天OHLC均值
+        df = zdat.df_xed_nextDay(self.df, ksgn = 'ohlc_avg', newSgn = 'xavg', nday = 10) #均值
+        return df
+
+    def prepared_ma(self, df): # 计算MA均线
+        return zta.mul_talib(zta.MA,  df, ksgn = 'ohlc_avg', vlst = zsys.ma100Lst_var) # ma
+
+    def prepared_amp(self, df):
+        df['price_range'] = self.df['high'].sub(self.df['low'])  # 当天价格差额
+        df['amp'] = self.df['price_range'].div(self.df['pre_close'])  # 当天振幅
+        df['amp_type'] = self.df['amp'].apply(zt.iff3type, d0=0.03, d9=0.05, v3=3, v2=2, v1=1)  # 差价分类器
+
+        return df
+
+    def prepared_other(self, df):
+        df['next_ohlc_avg'] = df['ohlc_avg'].shift(-1)
+        df['next_price_range'] = df['price_range'].shift(-1)
+        df['next_amp'] = df['amp'].shift(-1)
+        df['next_amp_type'] = self.df['amp_type'].shift(-1)
+
+        return df
+
     def prepared(self):
         self.df = self.df.sort_values('date') #日期排序
 
-        self.df['ohlc_avg'] = self.df[ohlc_lst].mean(axis = 1).round(2) # 当天OHLC均值
-        self.df['max_price_range'] = self.df['high'].sub(self.df['low']) # 当天价格差额
+        self.df = self.prepared_pre_next(self.df) # 前一天收盘价和后一天的开盘价
+        self.df = self.prepared_avg(self.df) # 填充均值
+        self.df = self.prepared_ma(self.df) # 填充MA均线
+        self.df = self.prepared_amp(self.df)  # 填充最大振幅
+        self.df = self.prepared_other(self.df)  # 填充其它
 
-        self.df = zdat.df_xed_nextDay(self.df, ksgn = 'ohlc_avg', newSgn = 'xavg', nday=10) #均值
+        self.df['y'] = self.df['next_amp_type']
 
-        self.df = zta.mul_talib(zta.MA,  self.df, ksgn = 'ohlc_avg', vlst = zsys.ma100Lst_var) # ma
-
-        # self.df['range_price_type'] = self.df['max_price_range'].apply(zt.iff3type, d0=0.05, d9=0.1, v3=3, v2=2, v1=1) # 差价分类器
-        # self.df['next_range_price_type'] = self.df['range_price_type'].shift(-1)
-
-        ## 计算第二天的数据
-        # self.df['next_open'] = self.df['open'].shift(-1)
-        self.df['next_ohlc_avg'] = self.df['ohlc_avg'].shift(-1)
-        self.df['next_max_price_range'] = self.df['max_price_range'].shift(-1)
-
-        self.df['y'] = self.df['next_ohlc_avg']
-        # self.df['y'] = self.df['next_max_price_range']
-
-        # 清楚NaN值
+        # 清除NaN值
         self.df = self.df.fillna(method='pad')
         self.df = self.df.fillna(method='bfill')
 
@@ -117,18 +138,19 @@ class  train_data():
         self.df_test = self.df.tail(dnum - dnum2)
 
         # 特征
-        other_features_lst = ohlc_lst + xagv_lst + ma100_lst
+        other_features_lst = ohlc_lst + xagv_lst + ma100_lst + other_lst
         self.x_train = self.df_train[other_features_lst].values
         self.x_test = self.df_test[other_features_lst].values
 
         # 标签
-        # self.y_train, self.y_test = pd.get_dummies(self.df_train['ohlc_avg']).values, pd.get_dummies(self.df_test['ohlc_avg']).values
-        # typ_lst = len(self.y_train[0])
-        self.y_train, self.y_test = self.df_train['y'], self.df_test['y']
-        typ_lst = 1
+        # 分类模式
+        self.y_train, self.y_test = pd.get_dummies(self.df_train['y']).values, pd.get_dummies(self.df_test['y']).values
+        typ_lst = self.y_train[0]
+        # 价格预测
+        # self.y_train, self.y_test = self.df_train['y'], self.df_test['y']
 
         xlst = other_features_lst
-        num_in, num_out = len(xlst), typ_lst
+        num_in, num_out = len(xlst), len(typ_lst)
 
         print('\n self.df_test.tail()', self.df_test.tail())
         print('\n self.x_train.shape,', self.x_train.shape)
@@ -141,7 +163,8 @@ class  train_data():
 
         print('\nnum_in,num_out:', num_in, 1) # num_out
         # mx = zks.rnn010(num_in, num_out)
-        mx = zks.lstm010(num_in, num_out)
+        # mx = zks.lstm010(num_in, num_out)
+        mx = zks.lstm020typ(num_in, num_out)
         #
         mx.summary()
         plot_model(mx, to_file = default_datadir + 'model.png')
@@ -149,13 +172,14 @@ class  train_data():
         print('\n#4 模型训练 fit')
         tbCallBack = keras.callbacks.TensorBoard(log_dir = default_logdir, write_graph = True, write_images=True)
         tn0 = arrow.now()
-        mx.fit(self.x_train, self.y_train, epochs = 50, batch_size = 512, callbacks = [tbCallBack])
+        mx.fit(self.x_train, self.y_train, epochs = 500, batch_size = 512, callbacks = [tbCallBack])
         tn = zt.timNSec('', tn0, True)
 
         print('\n#5 模型预测 predict')
         tn0 = arrow.now()
-        y_pred = mx.predict(self.x_test)
+        y_pred0 = mx.predict(self.x_test)
         tn = zt.timNSec('', tn0, True)
+        y_pred = np.argmax(y_pred0, axis = 1) + 1
         #
         self.df_test['y_pred'] = zdat.ds4x(y_pred, self.df_test.index, True)
         self.df_test.to_csv(default_datadir + 'my.csv', index = False)
@@ -165,7 +189,11 @@ class  train_data():
         print('\n#6 acc准确度分析')
         print('\nky0=10')
 
-        dacc, dfx, a10 = ztq.ai_acc_xed2ext(self.df_test.y, self.df_test.y_pred, ky0=10, fgDebug=True)
+        dacc, dfx, a10 = ztq.ai_acc_xed2ext(self.df_test.y, self.df_test.y_pred, ky0 = 10, fgDebug = True)
+
+        x1, x2 = self.df_test['y'].value_counts(), self.df_test['y_pred'].value_counts()
+        zt.prx('x1', x1);
+        zt.prx('x2', x2)
 
 ################################################################################
 
