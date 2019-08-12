@@ -87,34 +87,76 @@ class  train_data():
         self.data_file = data_file
         self.df = pd.read_csv(data_dir + data_file, index_col = 0)
 
-    def prepared_pre_next(self, df): # 填充前一天和后一天的值
-        df['next_open'] = self.df['open'].shift(-1)  # 后一天的开盘价
-        df['pre_close'] = self.df['close'].shift(1)  # 前一天收盘价
-
+    # 填充前一天和后一天的值
+    def prepared_pre_next(self, df):
+        df['next_open'] = df['open'].shift(-1)  # 后一天的开盘价
+        df['pre_close'] = df['close'].shift(1)  # 前一天收盘价
         return df
 
-    def prepared_avg(self, df): # 计算均值
+    # 计算均值
+    def prepared_avg(self, df):
         df['ohlc_avg'] = df[ohlc_lst].mean(axis = 1).round(2) # 当天OHLC均值
-        df = zdat.df_xed_nextDay(self.df, ksgn = 'ohlc_avg', newSgn = 'xavg', nday = 10) #均值
+        df = zdat.df_xed_nextDay(df, ksgn = 'ohlc_avg', newSgn = 'xavg', nday = 10) #10日均值
         return df
 
-    def prepared_ma(self, df): # 计算MA均线
+    # 计算MA均线
+    def prepared_ma(self, df):
         return zta.mul_talib(zta.MA,  df, ksgn = 'ohlc_avg', vlst = zsys.ma100Lst_var) # ma
 
+    # 计算振幅
     def prepared_amp(self, df):
-        df['price_range'] = self.df['high'].sub(self.df['low'])  # 当天价格差额
-        df['amp'] = self.df['price_range'].div(self.df['pre_close'])  # 当天振幅
-        df['amp_type'] = self.df['amp'].apply(zt.iff3type, d0=0.03, d9=0.05, v3=3, v2=2, v1=1)  # 差价分类器
-
+        df['price_range'] = df['high'].sub(df['low'])  # 当天振幅
+        df['amp'] = df['price_range'].div(df['pre_close'])  # 当天振幅
+        df['amp_type'] = df['amp'].apply(zt.iff3type, d0=0.03, d9=0.05, v3=3, v2=2, v1=1)  # 振幅分类器
         return df
 
-    def prepared_other(self, df):
+    # 次日数据
+    def prepared_next(self, df):
         df['next_ohlc_avg'] = df['ohlc_avg'].shift(-1)
         df['next_price_range'] = df['price_range'].shift(-1)
         df['next_amp'] = df['amp'].shift(-1)
-        df['next_amp_type'] = self.df['amp_type'].shift(-1)
+        df['next_amp_type'] = df['amp_type'].shift(-1)
+        return df
+
+    # 其它处理
+    def prepared_other(self, df):
+        # 清除NaN值
+        df = df.fillna(method='pad')
+        df = df.fillna(method='bfill')
 
         return df
+
+    # 处理标签数据
+    def prepared_y(self, df, y_key, type = 'onehot'):
+        # 处理标签
+
+        df['y'] = df[y_key] # 输出
+
+        if (type == 'onehot'):
+            # 分类模式， One-Hot
+            return self.get_onehot(df, 'y')
+        else:
+            return df['y']
+
+    def split(self, df, DC):
+        # 训练数据和测试数据分割
+        dnum_train = len(df.index)
+        dnum_test = round(dnum_train * DC)
+
+        return df.head(dnum_test), df.tail(dnum_train - dnum_test)
+
+    def get_onehot(self, df, k):
+        return pd.get_dummies(df[k]).values
+
+    def get_features(self, df, features_lst):
+        return df[features_lst].values
+
+    def training(self, df):
+        return df
+
+    # def modelling(self, df):
+
+    # def plot(self):
 
     def prepared(self):
         self.df = self.df.sort_values('date') #日期排序
@@ -123,34 +165,29 @@ class  train_data():
         self.df = self.prepared_avg(self.df) # 填充均值
         self.df = self.prepared_ma(self.df) # 填充MA均线
         self.df = self.prepared_amp(self.df)  # 填充最大振幅
+        self.df = self.prepared_next(self.df)  # 填充次日数据
         self.df = self.prepared_other(self.df)  # 填充其它
 
-        self.df['y'] = self.df['next_amp_type']
+        #############################################################################################################
 
-        # 清除NaN值
-        self.df = self.df.fillna(method='pad')
-        self.df = self.df.fillna(method='bfill')
+        # 分离训练和测试数据
+        self.df_train, self.df_test = self.split(self.df, 0.6)
 
-        dnum = len(self.df.index)
-        dnum2 = round(dnum * 0.6)
-
-        self.df_train = self.df.head(dnum2)
-        self.df_test = self.df.tail(dnum - dnum2)
-
-        # 特征
+        # 构建训练特征数据
         other_features_lst = ohlc_lst + xagv_lst + ma100_lst + other_lst
-        self.x_train = self.df_train[other_features_lst].values
-        self.x_test = self.df_test[other_features_lst].values
+        self.x_train = self.get_features(self.df_train, other_features_lst)
+        self.x_test = self.get_features(self.df_test, other_features_lst)
 
-        # 标签
-        # 分类模式
-        self.y_train, self.y_test = pd.get_dummies(self.df_train['y']).values, pd.get_dummies(self.df_test['y']).values
-        typ_lst = self.y_train[0]
-        # 价格预测
-        # self.y_train, self.y_test = self.df_train['y'], self.df_test['y']
+        #############################################################################################################
 
-        xlst = other_features_lst
-        num_in, num_out = len(xlst), len(typ_lst)
+        # 构建特征值
+        self.y_train = self.prepared_y(self.df_train, 'next_amp_type')
+        self.y_test = self.prepared_y(self.df_test, 'next_amp_type')
+
+        y_lst = self.y_train[0]
+        x_lst = other_features_lst
+
+        num_in, num_out = len(x_lst), len(y_lst)
 
         print('\n self.df_test.tail()', self.df_test.tail())
         print('\n self.x_train.shape,', self.x_train.shape)
@@ -161,7 +198,7 @@ class  train_data():
         print('\n x_train.shape,', self.x_train.shape)
         print('\n type(x_train),', type(self.x_train))
 
-        print('\nnum_in,num_out:', num_in, 1) # num_out
+        print('\nnum_in, num_out:', num_in, num_out)
         # mx = zks.rnn010(num_in, num_out)
         # mx = zks.lstm010(num_in, num_out)
         mx = zks.lstm020typ(num_in, num_out)
@@ -189,7 +226,7 @@ class  train_data():
         print('\n#6 acc准确度分析')
         print('\nky0=10')
 
-        dacc, dfx, a10 = ztq.ai_acc_xed2ext(self.df_test.y, self.df_test.y_pred, ky0 = 10, fgDebug = True)
+        dacc, dfx, a10 = ztq.ai_acc_xed2ext(self.df_test.y, self.df_test.y_pred, ky0 = 5, fgDebug = True)
 
         x1, x2 = self.df_test['y'].value_counts(), self.df_test['y_pred'].value_counts()
         zt.prx('x1', x1);
