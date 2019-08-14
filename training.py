@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 import math
 import arrow
+import pickle
 from IPython import display
 from matplotlib import pyplot as plt
 import numpy as np
@@ -41,7 +42,10 @@ ma200_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20','ma_30', 'ma_50',
 ma030_lst_var = [2, 3, 5, 10, 15, 20, 25, 30]
 ma030_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20', 'ma_25', 'ma_30']
 
-xagv_lst = ['xavg1', 'xavg2','xavg3','xavg4','xavg5','xavg6','xavg7','xavg8','xavg9']
+xagv_lst = ['xavg1', 'xavg2', 'xavg3', 'xavg4', 'xavg5', 'xavg6', 'xavg7', 'xavg8', 'xavg9']
+
+profit_lst = ['next_profit_1', 'next_profit_2', 'next_profit_3', 'next_profit_4', 'next_profit_5', 'next_profit_6', 'next_profit_7', 'next_profit_8', 'next_profit_9', 'next_profit_10']
+rate_lst = ['next_rate_5', 'next_rate_10']
 
 other_lst = ['price_range', 'amp', 'amp_type']
 
@@ -87,6 +91,18 @@ class  train_data():
         self.data_file = data_file
         self.df = pd.read_csv(data_dir + data_file, index_col = 0)
 
+    def load(self, filepath):
+        f = open(filepath, 'rb')
+        x = pickle.load(f)
+        f.close()
+
+        return x
+
+    def save(self, filepath, df):
+        f = open(filepath, 'wb')
+        pickle.dump(df, f)
+        f.close()
+
     # 填充前一天和后一天的值
     def prepared_pre_next(self, df):
         df['next_open'] = df['open'].shift(-1)  # 后一天的开盘价
@@ -96,7 +112,13 @@ class  train_data():
     # 计算均值
     def prepared_avg(self, df):
         df['ohlc_avg'] = df[ohlc_lst].mean(axis = 1).round(2) # 当天OHLC均值
+
+        df['dprice_max'] = df['ohlc_avg'].rolling(10).max()
+        df['dprice_min'] = df['ohlc_avg'].rolling(10).min()
+        df['dprice_avg'] = df['ohlc_avg'].rolling(10).mean()
+
         df = zdat.df_xed_nextDay(df, ksgn = 'ohlc_avg', newSgn = 'xavg', nday = 10) #10日均值
+
         return df
 
     # 计算MA均线
@@ -107,7 +129,28 @@ class  train_data():
     def prepared_amp(self, df):
         df['price_range'] = df['high'].sub(df['low'])  # 当天振幅
         df['amp'] = df['price_range'].div(df['pre_close'])  # 当天振幅
-        df['amp_type'] = df['amp'].apply(zt.iff3type, d0=0.03, d9=0.05, v3=3, v2=2, v1=1)  # 振幅分类器
+        df['amp_type'] = df['amp'].apply(zt.iff3type, d0 = 0.03, d9 = 0.05, v3=3, v2=2, v1=1)  # 振幅分类器
+        return df
+
+    def prepared_next_profit(self, df, num = 5, count = 2, step = 5):
+        for i in range(count):
+            j = num + i * step
+            keyname_profit = 'next_profit_' + str(j)
+            df[keyname_profit] = df['close'].shift(-1 * (j)).sub(df['close'])
+
+        return df
+
+    def prepared_next_rate(self, df, num = 5, count = 2, step = 5):
+        for i in range(count):
+            j = num + i * step
+            keyname_profit = 'next_profit_' + str(j)
+            keyname_rate = 'next_rate_' + str(j)
+            df[keyname_profit] = df['close'].shift(-1 * (j)).sub(df['close'])
+            df[keyname_rate] = df[keyname_profit].div(df['close'])
+
+
+        df['next_rate_10_type'] = df['next_rate_10'].apply(zt.iff3type, d0=0, d9=0.05, v3=3, v2=2, v1=1)  # 振幅分类器
+
         return df
 
     # 次日数据
@@ -159,14 +202,20 @@ class  train_data():
     # def plot(self):
 
     def prepared(self):
+
         self.df = self.df.sort_values('date') #日期排序
 
         self.df = self.prepared_pre_next(self.df) # 前一天收盘价和后一天的开盘价
+        self.df = self.prepared_next_profit(self.df, 1, 10, 1) # 计算第5天和第10天的收益率，从第5天开始，计算2次，步长为5天
+        self.df = self.prepared_next_rate(self.df, 5, 2, 5) # 计算第5天和第10天的收益率，从第5天开始，计算2次，步长为5天
         self.df = self.prepared_avg(self.df) # 填充均值
         self.df = self.prepared_ma(self.df) # 填充MA均线
         self.df = self.prepared_amp(self.df)  # 填充最大振幅
         self.df = self.prepared_next(self.df)  # 填充次日数据
         self.df = self.prepared_other(self.df)  # 填充其它
+
+        # df = self.load(default_datadir + 'c.dat')
+        # self.save(default_datadir + 'c.dat', self.df)
 
         #############################################################################################################
 
@@ -174,15 +223,17 @@ class  train_data():
         self.df_train, self.df_test = self.split(self.df, 0.6)
 
         # 构建训练特征数据
-        other_features_lst = ohlc_lst + xagv_lst + ma100_lst + other_lst
+        other_features_lst = ohlc_lst + profit_lst + xagv_lst + ma100_lst + other_lst
         self.x_train = self.get_features(self.df_train, other_features_lst)
         self.x_test = self.get_features(self.df_test, other_features_lst)
 
         #############################################################################################################
 
-        # 构建特征值
-        self.y_train = self.prepared_y(self.df_train, 'next_amp_type')
-        self.y_test = self.prepared_y(self.df_test, 'next_amp_type')
+        # 构建特征，也就是结果值Y
+        self.y_train = self.prepared_y(self.df_train, 'next_rate_10_type')
+        self.y_test = self.prepared_y(self.df_test, 'next_rate_10_type')
+
+        #############################################################################################################
 
         y_lst = self.y_train[0]
         x_lst = other_features_lst
@@ -198,7 +249,7 @@ class  train_data():
         print('\n x_train.shape,', self.x_train.shape)
         print('\n type(x_train),', type(self.x_train))
 
-        print('\nnum_in, num_out:', num_in, num_out)
+        print('\n num_in, num_out:', num_in, num_out)
         # mx = zks.rnn010(num_in, num_out)
         # mx = zks.lstm010(num_in, num_out)
         mx = zks.lstm020typ(num_in, num_out)
@@ -226,7 +277,7 @@ class  train_data():
         print('\n#6 acc准确度分析')
         print('\nky0=10')
 
-        dacc, dfx, a10 = ztq.ai_acc_xed2ext(self.df_test.y, self.df_test.y_pred, ky0 = 5, fgDebug = True)
+        dacc, dfx, a10 = ztq.ai_acc_xed2ext(self.df_test.y, self.df_test.y_pred, ky0 = 3, fgDebug = True)
 
         x1, x2 = self.df_test['y'].value_counts(), self.df_test['y_pred'].value_counts()
         zt.prx('x1', x1);
@@ -285,6 +336,7 @@ def load(filename):
 
 def init():
     # testing()
+    # exit(0)
     #
     # tf.logging.set_verbosity(tf.logging.ERROR)
     # pd.options.display.max_rows = 10
