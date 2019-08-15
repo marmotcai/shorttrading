@@ -22,48 +22,16 @@ QQ群: Top极宽量化1群，124134140
 '''
 #
 
-import sys,os,re
-import os,sys,re
-import arrow,random
-
 import numpy as np
 import pandas as pd
-import tushare as ts
-import numexpr as ne  
-
-
-import matplotlib as mpl
-from matplotlib import pyplot as plt
-
-from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import as_completed
 
 #
-import sklearn 
-from sklearn import datasets, linear_model
 from sklearn import metrics
-from sklearn import tree
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import cross_val_predict
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
-from sklearn.neural_network import BernoulliRBM
-from sklearn.neural_network import MLPClassifier
-from sklearn.neural_network import MLPRegressor
-from sklearn.externals import joblib 
+
 #
 #
 #
-import zsys
-import ztools as zt
-import zpd_talib as zta
 #
 
 

@@ -18,29 +18,14 @@ by Top极宽·量化开源团队 2016.12.25 首发
 简介：Top极宽常用数据工具函数集
 '''
 
-import os,sys,io,re
-import random,arrow,bs4
 import numpy as np
-import numexpr as ne
 import pandas as pd
-import tushare as ts
-
-import requests
-#
-import cpuinfo as cpu
-import psutil as psu
-import inspect
-#
-import matplotlib as mpl
-import matplotlib.colors
-from matplotlib import cm
 
 #
-import zsys
-import ztools as zt
-import ztools_str as zstr
-import ztools_web as zweb
-import zpd_talib as zta
+#
+
+#
+from vendor import zsys, zpd_talib as zta, ztools as zt, ztools_str as zstr
 
 #
 
@@ -178,7 +163,7 @@ def df_kcut8myearlst(df,ksgn,tim0str,ftg0,yearlst):
         df2.to_csv(ftg,index=False,encoding='gb18030')
     
 #----------df.xed
-def df_xappend(df,df0,ksgn,num_round=3,vlst=zsys.ohlcDVLst):
+def df_xappend(df, df0, ksgn, num_round=3, vlst=zsys.ohlcDVLst):
     if (len(df0)>0):   
         df2 =df0.append(df)     
         df2=df2.sort_values([ksgn],ascending=True);
@@ -235,7 +220,7 @@ def df_xed_ailib(df,ksgn='avg',fgDate=True):
     df['xtim']=df.index
     df=df_xtim2mtim(df,'xtim',fgDate)
     #   xed.ma.xxx
-    df=zta.mul_talib(zta.MA,df, ksgn,zsys.ma100Lst_var)
+    df=zta.mul_talib(zta.MA, df, ksgn, zsys.ma100Lst_var)
     #
     #   xed.xavg.xxx,predict,y_data
     df=df_xed_nextDay(df,ksgn,'x'+ksgn,10)

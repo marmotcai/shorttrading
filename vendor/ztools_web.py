@@ -18,23 +18,18 @@ by Top极宽·量化开源团队 2016.12.25 首发
 简介：Top极宽web网络与htm网页常用工具函数集
 '''
 
-import os,sys,io,re
-import arrow,bs4,random
+import os, re
+import random
 import pandas as pd
-import tushare as ts
 #
 import requests
-import bs4
-from bs4 import BeautifulSoup 
-from robobrowser import RoboBrowser 
-from concurrent import futures
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from bs4 import BeautifulSoup
+from robobrowser import RoboBrowser
+from concurrent.futures import as_completed
 #
 
-import zsys
-import ztools as zt
-import ztools_str as zstr
-import ztools_data as zdat
+from vendor import zsys, ztools_data as zdat, ztools as zt, ztools_str as zstr
+
 #
 #-----------------------
 '''
@@ -96,7 +91,7 @@ def web_get001txt(url,ucod='gb18030',ftg='',fcod='gbk'):
     
 def web_get001txtFg(uss,fss):
     fsiz=zt.f_size(fss)
-    if zsys.web_get001txtFg or(fsiz<1000):
+    if zsys.web_get001txtFg or(fsiz < 1000):
         #print(zsys.sgnSP8,fss,fsiz)
         #uss=xtfb.us0_extOuzhi+xtfb.kgid+'.shtml';#print(uss)
         htm=web_get001txt(uss,ftg=fss,fcod='GB18030');#print(fss)

@@ -18,29 +18,23 @@ by Top极宽·量化开源团队 2016.12.25 首发
 简介：Top极宽常用工具函数集
 '''
 
-import os,sys,io,re,pickle
-import random,arrow,bs4,shutil
+import os,sys, pickle
+import random,arrow, shutil
 import numpy as np
 import numexpr as ne
 import pandas as pd
-import tushare as ts
 
-import requests
 #
 import cpuinfo as cpu
 import psutil as psu
 import inspect
 #
 import matplotlib as mpl
-import matplotlib.colors
-from matplotlib import cm
-from functools import reduce 
+from functools import reduce
 
 import time
 #
-import zsys
-import ztools_str as zstr
-import ztools_web as zweb
+from vendor import zsys, ztools_str as zstr
 
 #
 
@@ -76,28 +70,28 @@ def  initSysVar(fgView=False):
     pd.set_option('display.width', 450)
     #
     zsys.tim0_sys=arrow.now()
-    zsys.tim0_str=zsys.tim0_sys.format('YYYY-MM-DD HH:mm:ss');
+    zsys.tim0_str= zsys.tim0_sys.format('YYYY-MM-DD HH:mm:ss');
         
     #--------------
     zsys.cpu_num_core=psu.cpu_count(logical=False)
     zsys.cpu_num9=psu.cpu_count()  
-    zsys.cpu_num=round(zsys.cpu_num9*0.8)
+    zsys.cpu_num=round(zsys.cpu_num9 * 0.8)
     ne.set_num_threads(zsys.cpu_num)
     #
     if fgView:
-        print('cpu_num_core:',zsys.cpu_num_core)
-        print('cpu_num9:',zsys.cpu_num9)
-        print('cpu_num:',zsys.cpu_num)
+        print('cpu_num_core:', zsys.cpu_num_core)
+        print('cpu_num9:', zsys.cpu_num9)
+        print('cpu_num:', zsys.cpu_num)
         #
-        print('tim0_str:',zsys.tim0_str)
-        print('tim0_sys:',zsys.tim0_sys)
+        print('tim0_str:', zsys.tim0_str)
+        print('tim0_sys:', zsys.tim0_sys)
         #
-        print('tim0.year:',zsys.tim0_sys.year)
-        print('tim0.month:',zsys.tim0_sys.month)
-        print('tim0.day:',zsys.tim0_sys.day)
+        print('tim0.year:', zsys.tim0_sys.year)
+        print('tim0.month:', zsys.tim0_sys.month)
+        print('tim0.day:', zsys.tim0_sys.day)
         #
-        print('tim0.shift(-2):',zsys.tim0_sys.shift(days=-2))
-        print('tim0.shift(2):',zsys.tim0_sys.shift(days=2))
+        print('tim0.shift(-2):', zsys.tim0_sys.shift(days=-2))
+        print('tim0.shift(2):', zsys.tim0_sys.shift(days=2))
         
 #-----------misc
 
@@ -370,10 +364,10 @@ def nparr2tfvar(x):
 #----f.misc.xxx
 
 def f_addLog(dss):
-    if zsys.logFN!='':
+    if zsys.logFN!= '':
         timStr=arrow.now().format('YYYY:MM:DD HH:mm:ss')
         tss=timStr+'-->  '+dss;#print('log,',tss)
-        f_add(zsys.logFN,tss);
+        f_add(zsys.logFN, tss);
          
 def  f_size(fss):
     if os.path.exists(fss):

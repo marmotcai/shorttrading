@@ -1,39 +1,28 @@
 from __future__ import print_function
 
-import os
 import math
 import arrow
-import pickle
+
 from IPython import display
 from matplotlib import pyplot as plt
-import numpy as np
+
 import pandas as pd
 from sklearn import metrics
 import tensorflow as tf
 from tensorflow.python.data import Dataset
 
 import keras
-import keras as ks
-from keras import initializers,models,layers
-from keras.preprocessing import sequence
-from keras.models import Sequential,load_model
-from keras.layers import Dense, Input, Dropout, Embedding, LSTM, Bidirectional,Activation,SimpleRNN,Conv1D,MaxPooling1D, GlobalMaxPooling1D,GlobalAveragePooling1D
-from keras.utils import plot_model
+from keras.models import Sequential
+from keras.layers import Dense
 
-import zsys
-import zpd_talib as zta
-import ztools as zt
-import ztools_data as zdat
-import ztools_datadown as zddown
-import ztools_tq as ztq
-import zai_keras as zks
+from vendor import ztools_tq as ztq, zai_keras as zks, ztools_datadown as zddown, ztools_data as zdat, ztools as zt
+
+from quant import dataobject as do
+from quant import modeling as mo
+from utils import util as tools
+from utils import params as p
 
 ################################################################################
-
-default_datadir = './data/'
-default_logdir = './data/logs/'
-
-ohlc_lst = ['open', 'high', 'low', 'close']
 
 ma100_lst_var = [2, 3, 5, 10, 15, 20, 25, 30, 50, 100]
 ma100_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20', 'ma_25', 'ma_30', 'ma_50', 'ma_100']
@@ -44,34 +33,21 @@ ma030_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20', 'ma_25', 'ma_30'
 
 xagv_lst = ['xavg1', 'xavg2', 'xavg3', 'xavg4', 'xavg5', 'xavg6', 'xavg7', 'xavg8', 'xavg9']
 
-profit_lst = ['next_profit_1', 'next_profit_2', 'next_profit_3', 'next_profit_4', 'next_profit_5', 'next_profit_6', 'next_profit_7', 'next_profit_8', 'next_profit_9', 'next_profit_10']
 rate_lst = ['next_rate_5', 'next_rate_10']
 
 other_lst = ['price_range', 'amp', 'amp_type']
 
 ################################################################################
 
-def mkdir(path):
-    # 去除首位空格
-    path = path.strip()
-    # 去除尾部 \ 符号
-    path = path.rstrip("\\")
-    # 判断结果
-    if not os.path.exists(path):
-        # 如果不存在则创建目录
-        os.makedirs(path)
-        return True
-    else:
-        return False
 
 ################################################################################
 
 class down_data():
-    def __init__(self, data_dir = default_datadir):
+    def __init__(self, data_dir = p.default_datadir):
         self.data_dir = data_dir
         self.rss = self.data_dir + 'xday/'
 
-        mkdir(self.rss)
+        tools.mkdir(self.rss)
 
     def download_inx(self, filename = "inx_index.csv"):
         finx = self.data_dir + filename
@@ -84,204 +60,7 @@ class down_data():
 
 ################################################################################
 
-class  train_data():
 
-    def __init__(self, data_dir, data_file):
-        self.data_dir = data_dir
-        self.data_file = data_file
-        self.df = pd.read_csv(data_dir + data_file, index_col = 0)
-
-    def load(self, filepath):
-        f = open(filepath, 'rb')
-        x = pickle.load(f)
-        f.close()
-
-        return x
-
-    def save(self, filepath, df):
-        f = open(filepath, 'wb')
-        pickle.dump(df, f)
-        f.close()
-
-    # 填充前一天和后一天的值
-    def prepared_pre_next(self, df):
-        df['next_open'] = df['open'].shift(-1)  # 后一天的开盘价
-        df['pre_close'] = df['close'].shift(1)  # 前一天收盘价
-        return df
-
-    # 计算均值
-    def prepared_avg(self, df):
-        df['ohlc_avg'] = df[ohlc_lst].mean(axis = 1).round(2) # 当天OHLC均值
-
-        df['dprice_max'] = df['ohlc_avg'].rolling(10).max()
-        df['dprice_min'] = df['ohlc_avg'].rolling(10).min()
-        df['dprice_avg'] = df['ohlc_avg'].rolling(10).mean()
-
-        df = zdat.df_xed_nextDay(df, ksgn = 'ohlc_avg', newSgn = 'xavg', nday = 10) #10日均值
-
-        return df
-
-    # 计算MA均线
-    def prepared_ma(self, df):
-        return zta.mul_talib(zta.MA,  df, ksgn = 'ohlc_avg', vlst = zsys.ma100Lst_var) # ma
-
-    # 计算振幅
-    def prepared_amp(self, df):
-        df['price_range'] = df['high'].sub(df['low'])  # 当天振幅
-        df['amp'] = df['price_range'].div(df['pre_close'])  # 当天振幅
-        df['amp_type'] = df['amp'].apply(zt.iff3type, d0 = 0.03, d9 = 0.05, v3=3, v2=2, v1=1)  # 振幅分类器
-        return df
-
-    def prepared_next_profit(self, df, num = 5, count = 2, step = 5):
-        for i in range(count):
-            j = num + i * step
-            keyname_profit = 'next_profit_' + str(j)
-            df[keyname_profit] = df['close'].shift(-1 * (j)).sub(df['close'])
-
-        return df
-
-    def prepared_next_rate(self, df, num = 5, count = 2, step = 5):
-        for i in range(count):
-            j = num + i * step
-            keyname_profit = 'next_profit_' + str(j)
-            keyname_rate = 'next_rate_' + str(j)
-            df[keyname_profit] = df['close'].shift(-1 * (j)).sub(df['close'])
-            df[keyname_rate] = df[keyname_profit].div(df['close'])
-
-
-        df['next_rate_10_type'] = df['next_rate_10'].apply(zt.iff3type, d0=0, d9=0.05, v3=3, v2=2, v1=1)  # 振幅分类器
-
-        return df
-
-    # 次日数据
-    def prepared_next(self, df):
-        df['next_ohlc_avg'] = df['ohlc_avg'].shift(-1)
-        df['next_price_range'] = df['price_range'].shift(-1)
-        df['next_amp'] = df['amp'].shift(-1)
-        df['next_amp_type'] = df['amp_type'].shift(-1)
-        return df
-
-    # 其它处理
-    def prepared_other(self, df):
-        # 清除NaN值
-        df = df.fillna(method='pad')
-        df = df.fillna(method='bfill')
-
-        return df
-
-    # 处理标签数据
-    def prepared_y(self, df, y_key, type = 'onehot'):
-        # 处理标签
-
-        df['y'] = df[y_key] # 输出
-
-        if (type == 'onehot'):
-            # 分类模式， One-Hot
-            return self.get_onehot(df, 'y')
-        else:
-            return df['y']
-
-    def split(self, df, DC):
-        # 训练数据和测试数据分割
-        dnum_train = len(df.index)
-        dnum_test = round(dnum_train * DC)
-
-        return df.head(dnum_test), df.tail(dnum_train - dnum_test)
-
-    def get_onehot(self, df, k):
-        return pd.get_dummies(df[k]).values
-
-    def get_features(self, df, features_lst):
-        return df[features_lst].values
-
-    def training(self, df):
-        return df
-
-    # def modelling(self, df):
-
-    # def plot(self):
-
-    def prepared(self):
-
-        self.df = self.df.sort_values('date') #日期排序
-
-        self.df = self.prepared_pre_next(self.df) # 前一天收盘价和后一天的开盘价
-        self.df = self.prepared_next_profit(self.df, 1, 10, 1) # 计算第5天和第10天的收益率，从第5天开始，计算2次，步长为5天
-        self.df = self.prepared_next_rate(self.df, 5, 2, 5) # 计算第5天和第10天的收益率，从第5天开始，计算2次，步长为5天
-        self.df = self.prepared_avg(self.df) # 填充均值
-        self.df = self.prepared_ma(self.df) # 填充MA均线
-        self.df = self.prepared_amp(self.df)  # 填充最大振幅
-        self.df = self.prepared_next(self.df)  # 填充次日数据
-        self.df = self.prepared_other(self.df)  # 填充其它
-
-        # df = self.load(default_datadir + 'c.dat')
-        # self.save(default_datadir + 'c.dat', self.df)
-
-        #############################################################################################################
-
-        # 分离训练和测试数据
-        self.df_train, self.df_test = self.split(self.df, 0.6)
-
-        # 构建训练特征数据
-        other_features_lst = ohlc_lst + profit_lst + xagv_lst + ma100_lst + other_lst
-        self.x_train = self.get_features(self.df_train, other_features_lst)
-        self.x_test = self.get_features(self.df_test, other_features_lst)
-
-        #############################################################################################################
-
-        # 构建特征，也就是结果值Y
-        self.y_train = self.prepared_y(self.df_train, 'next_rate_10_type')
-        self.y_test = self.prepared_y(self.df_test, 'next_rate_10_type')
-
-        #############################################################################################################
-
-        y_lst = self.y_train[0]
-        x_lst = other_features_lst
-
-        num_in, num_out = len(x_lst), len(y_lst)
-
-        print('\n self.df_test.tail()', self.df_test.tail())
-        print('\n self.x_train.shape,', self.x_train.shape)
-        print('\n type(self.x_train),', type(self.x_train))
-
-        rxn, txn = self.x_train.shape[0], self.x_test.shape[0]
-        self.x_train, self.x_test = self.x_train.reshape(rxn, num_in, -1), self.x_test.reshape(txn, num_in, -1)
-        print('\n x_train.shape,', self.x_train.shape)
-        print('\n type(x_train),', type(self.x_train))
-
-        print('\n num_in, num_out:', num_in, num_out)
-        # mx = zks.rnn010(num_in, num_out)
-        # mx = zks.lstm010(num_in, num_out)
-        mx = zks.lstm020typ(num_in, num_out)
-        #
-        mx.summary()
-        plot_model(mx, to_file = default_datadir + 'model.png')
-
-        print('\n#4 模型训练 fit')
-        tbCallBack = keras.callbacks.TensorBoard(log_dir = default_logdir, write_graph = True, write_images=True)
-        tn0 = arrow.now()
-        mx.fit(self.x_train, self.y_train, epochs = 500, batch_size = 512, callbacks = [tbCallBack])
-        tn = zt.timNSec('', tn0, True)
-
-        print('\n#5 模型预测 predict')
-        tn0 = arrow.now()
-        y_pred0 = mx.predict(self.x_test)
-        tn = zt.timNSec('', tn0, True)
-        y_pred = np.argmax(y_pred0, axis = 1) + 1
-        #
-        self.df_test['y_pred'] = zdat.ds4x(y_pred, self.df_test.index, True)
-        self.df_test.to_csv(default_datadir + 'my.csv', index = False)
-
-        print('NaN的数量:', self.df_test.isnull().sum().sum())
-
-        print('\n#6 acc准确度分析')
-        print('\nky0=10')
-
-        dacc, dfx, a10 = ztq.ai_acc_xed2ext(self.df_test.y, self.df_test.y_pred, ky0 = 3, fgDebug = True)
-
-        x1, x2 = self.df_test['y'].value_counts(), self.df_test['y_pred'].value_counts()
-        zt.prx('x1', x1);
-        zt.prx('x2', x2)
 
 ################################################################################
 
@@ -311,7 +90,7 @@ class train():
         y_pred = self.model.predict(x_test)
         tn = zt.timNSec('', tn0, True)
         self.data_obj.df_test['y_pred'] = zdat.ds4x(y_pred, self.data_obj.df_test.index, True)
-        self.data_obj.df_test.to_csv(default_logdir + 'df_tst.csv', index=False)
+        self.data_obj.df_test.to_csv(p.default_logdir + 'df_tst.csv', index=False)
 
     def draw(self):
         df_draw = pd.DataFrame()
@@ -319,6 +98,7 @@ class train():
         df_draw['y_pred'] = self.data_obj.df_test['y_pred']
         df_draw.plot()
         plt.show()
+
 ################################################################################
 
 def testing():
@@ -328,11 +108,10 @@ def testing():
     print('Found GPU at: {}'.format(device_name))
 
 def load(filename):
-    data_obj = train_data(default_datadir, filename)
-    data_obj.prepared()
-    print(data_obj.df.tail(10))
+    data = do.train_data(p.default_datadir, filename)
+    print(data.df.tail(10))
 
-    return data_obj
+    return data
 
 def init():
     # testing()
@@ -341,12 +120,9 @@ def init():
     # tf.logging.set_verbosity(tf.logging.ERROR)
     # pd.options.display.max_rows = 10
     # pd.options.display.float_format = '{:.1f}'.format
-    pd.set_option('display.max_rows', 10)
-    pd.set_option('display.width', 450)
-    pd.set_option('display.float_format', zt.xfloat5)
 
-    mkdir(default_datadir)
-    mkdir(default_logdir)
+    tools.mkdir(p.default_datadir)
+    tools.mkdir(p.default_logdir)
 
 ################################################################################
 
@@ -355,7 +131,10 @@ def init():
 # down_obj.downlaod_stk()
 
 init()
-data_obj = load("601988.csv")
+model = mo.model(load("601988.csv"))
+model.modeling('rate')
+model.building()
+
 # train_obj = train(data_obj)
 # train_obj.training()
 # train_obj.draw()

@@ -20,53 +20,33 @@ QQ群: Top极宽量化1群，124134140
 '''
 #
 
-import sys,os,re,pickle
-import arrow,bs4,random,copy
-import numexpr as ne  
+import os
+import arrow, copy
 import numpy as np
 import pandas as pd
-import tushare as ts
 #import talib as ta
 
 # import pypinyin
 #
 
-import matplotlib as mpl
-from matplotlib import pyplot as plt
-
-from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import as_completed
 #import multiprocessing
 #
 import keras as ks
 
-import sklearn
 from sklearn import metrics
 
 
 #
-import keras
-from keras.models import Sequential,load_model
-from keras.utils import plot_model
-
+from keras.models import load_model
 
 #
-import tflearn
-import tensorflow as tf
 
 #
-import zsys
-import ztools as zt
-import ztools_str as zstr
-import ztools_data as zdat
-
-
+from vendor import zsys, zpd_talib as zta, ztools_data as zdat, ztools as zt, ztools_str as zstr
 
 
 #-------------------
 #
-import zpd_talib as zta
 
 #
 #-------------------
@@ -81,7 +61,7 @@ def tq_init(rs0,codLst,inxLst=['000001'],priceSgn='avg',prjNam='TQ001'):
     pd.set_option('display.width', 450)    
     pd.set_option('display.float_format', zt.xfloat3)    
     #
-    qx=zsys.TQ_bar()
+    qx= zsys.TQ_bar()
     qx.rdat0,qx.prjNam=rs0,prjNam
     qx.stkCodeLst,qx.inxCodeLst=codLst,inxLst
     #qx.codID,qx.codFN=xcod,zsys.rdatCN+xcod+'.csv'
@@ -90,7 +70,7 @@ def tq_init(rs0,codLst,inxLst=['000001'],priceSgn='avg',prjNam='TQ001'):
     #
     print('tq_init name...')
     #f_stkCodNamTbl='stk_code.csv'
-    fstk,finx=zsys.rdatInx+zsys.f_stkNamTbl,zsys.rdatInx+zsys.f_inxNamTbl
+    fstk,finx= zsys.rdatInx + zsys.f_stkNamTbl, zsys.rdatInx + zsys.f_inxNamTbl
     qx.stkNamTbl=pd.read_csv(fstk,dtype={'code':str},encoding='GBK')
     qx.inxNamTbl=pd.read_csv(finx,dtype={'code':str},encoding='GBK')
     #
@@ -125,12 +105,12 @@ def tq_prVar(qx):
     zt.xobjPr(qx)
     #
     print('\nzsys.xxx')
-    print('    rdat0,',zsys.rdat0)
-    print('    rdatCN,',zsys.rdatCN)
-    print('    rdatCNX,',zsys.rdatCNX)
-    print('    rdatInx,',zsys.rdatInx)
-    print('    rdatMin0,',zsys.rdatMin0)
-    print('    rdatTick,',zsys.rdatTick)
+    print('    rdat0,', zsys.rdat0)
+    print('    rdatCN,', zsys.rdatCN)
+    print('    rdatCNX,', zsys.rdatCNX)
+    print('    rdatInx,', zsys.rdatInx)
+    print('    rdatMin0,', zsys.rdatMin0)
+    print('    rdatTick,', zsys.rdatTick)
     #
     print('\ncode list:',qx.stkCodeLst)
     print(' inx list:',qx.inxCodeLst)
@@ -395,7 +375,7 @@ def tq_usrPoolsInit(qx,addFg=False):
 
 def tq_usr2trdLib(qx):
     xtim,upools=qx.wrkTimStr,qx.usrPools
-    r1=pd.Series(zsys.qx_trdNil,index=zsys.qx_trdName);
+    r1=pd.Series(zsys.qx_trdNil, index=zsys.qx_trdName);
     #
     r1['ID']=tq_usrIDSet(qx)
     r1['time'],r1['cash']=xtim,qx.usrMoney

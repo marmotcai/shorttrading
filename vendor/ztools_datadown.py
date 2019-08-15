@@ -19,29 +19,17 @@ by Top极宽·量化开源团队 2016.12.25 首发
 简介：Top极宽常用数据现在工具函数集
 '''
 
-import os,sys,io,re
-import random,arrow,bs4
-import numpy as np
-import numexpr as ne
+import os
+import arrow
 import pandas as pd
 import tushare as ts
 
-import requests
 #
-import cpuinfo as cpu
-import psutil as psu
-import inspect
 #
-import matplotlib as mpl
-import matplotlib.colors
-from matplotlib import cm
 
 #
-import zsys
-import ztools as zt
-import ztools_str as zstr
-import ztools_web as zweb
-import ztools_data as zdat
+from vendor import zsys, ztools_data as zdat, ztools as zt
+
 
 #
 

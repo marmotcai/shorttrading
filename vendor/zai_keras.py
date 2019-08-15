@@ -20,50 +20,29 @@ QQ群: Top极宽量化1群，124134140
 '''
 #
 
-import sys,os,re
-import arrow,bs4,random
-import numexpr as ne  
-import numpy as np
-import pandas as pd
-import tushare as ts
 #import talib as ta
 
-import pypinyin 
 #
 
-import matplotlib as mpl
-from matplotlib import pyplot as plt
-
-from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import as_completed
 #import multiprocessing
 #
 #import sklearn
 #from sklearn import metrics
 
-import keras as ks
-from keras import initializers,models,layers
-from keras.preprocessing import sequence
-from keras.models import Sequential,load_model
-from keras.layers import Dense, Input, Dropout, Embedding, LSTM, Bidirectional,Activation,SimpleRNN,Conv1D,MaxPooling1D, GlobalMaxPooling1D,GlobalAveragePooling1D
-from keras.optimizers import RMSprop, SGD  
-from keras.applications.resnet50 import preprocess_input, decode_predictions
+from keras import initializers, layers
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, LSTM, SimpleRNN
+from keras.optimizers import RMSprop
+
+
 #
-import tflearn as tn
-import tensorflow as tf
 # import tensorlayer as tl
 
 #
-import zsys
-import ztools as zt
 
 
 #-------------------
 #
-import ztools_tq as ztq
-import zpd_talib as zta
-import zai_tools as zat
 #
 #-------------------
 
