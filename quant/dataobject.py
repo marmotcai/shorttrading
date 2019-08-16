@@ -5,10 +5,39 @@ from vendor import zsys
 from vendor import zpd_talib as zta
 from vendor import ztools as zt
 from vendor import ztools_data as zdat
+from vendor import ztools_datadown as zddown
 
-from utils import params as p
+from utils import params as my_params
+from utils import utils as my_utils
 
 ################################################################################
+
+class download():
+    def __init__(self):
+        print("start download data ..")
+
+    def download_inx(self, downpath = my_params.default_datapath, filename = "inx_code.csv"):
+        if my_utils.path_exists(filename) == False:
+            print("inx file is not exists and exit")
+            return False
+
+        if my_utils.path_exists(downpath) == False:
+            my_utils.mkdir(downpath)
+
+        zddown.down_stk_inx(downpath, filename);
+        return True
+
+    def downlaod_stk(self, downpath = my_params.default_datapath, filename = "stk_code.csv"):
+        if my_utils.path_exists(filename) == False:
+            print("stk file is not exists and exit")
+            return False
+
+        if my_utils.path_exists(downpath) == False:
+            my_utils.mkdir(downpath)
+
+        xtyp = '5'
+        zddown.down_stk_all(downpath, filename, xtyp)
+
 
 class util():
     def __init__(self):
@@ -30,7 +59,7 @@ class util():
 
     # 计算均值
     def prepared_avg(df):
-        df['ohlc_avg'] = df[p.ohlc_lst].mean(axis = 1).round(2) # 当天OHLC均值
+        df['ohlc_avg'] = df[my_params.ohlc_lst].mean(axis = 1).round(2) # 当天OHLC均值
         df['dprice_max'] = df['ohlc_avg'].rolling(10).max()
         df['dprice_min'] = df['ohlc_avg'].rolling(10).min()
         df['dprice_avg'] = df['ohlc_avg'].rolling(10).mean()

@@ -2,12 +2,11 @@ import arrow
 import keras
 from keras.utils import plot_model
 
-
 from vendor import ztools as zt
 from vendor import zai_keras as zks
 from quant import dataobject as do
 from quant import evaluation as eva
-from utils import params as p
+from utils import params as my_params
 
 class model():
     def __init__(self, do):
@@ -22,7 +21,7 @@ class model():
         self.df_train, self.df_test = do.util.split(self.do.df, 0.6)
 
         # 构建训练特征数据
-        other_features_lst = p.ohlc_lst + p.profit_lst # + xagv_lst + ma100_lst + other_lst
+        other_features_lst = my_params.ohlc_lst + my_params.volume_lst + my_params.profit_lst # + xagv_lst + ma100_lst + other_lst
         self.x_train = do.util.get_features(self.df_train, other_features_lst)
         self.x_test = do.util.get_features(self.df_test, other_features_lst)
 
@@ -53,10 +52,10 @@ class model():
 
         mx = zks.lstm020typ(num_in, num_out)
         mx.summary()
-        plot_model(mx, to_file = p.default_datadir + 'model.png')
+        plot_model(mx, to_file = my_params.default_datadir + 'model.png')
 
         print('\n#4 模型训练 fit')
-        tbCallBack = keras.callbacks.TensorBoard(log_dir = p.default_logdir, write_graph = True, write_images=True)
+        tbCallBack = keras.callbacks.TensorBoard(log_dir = my_params.default_logdir, write_graph = True, write_images=True)
         tn0 = arrow.now()
         mx.fit(self.x_train, self.y_train, epochs = 500, batch_size = 512, callbacks = [tbCallBack])
         tn = zt.timNSec('', tn0, True)

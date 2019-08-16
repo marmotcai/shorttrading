@@ -122,17 +122,18 @@ def down_stk_inx010(rdat,xcod,tim0):
 
 
     
-def down_stk_inx(rdat,finx):
-    dinx = pd.read_csv(finx,encoding='gbk');print(finx); 
-    xn9=len(dinx['code']);
+def down_stk_inx(rdat, finx):
+    dinx = pd.read_csv(finx, encoding='gbk'); print(finx);
+    xn9 = len(dinx['code']);
     for i in range(xn9):
-    #for xc,xtim0 in dinx['code'],dinx['tim0']:
-        d5=dinx.iloc[i]
-        xc=d5['code'];xtim0=d5['tim0']
-        i+=1;code="%06d" %xc
-        print("\n",i,"/",xn9,"code,",code,xtim0)
+    #for xc, xtim0 in dinx['code'], dinx['tim0']:
+        d5 = dinx.iloc[i]
+        xc = d5['code'];
+        xtim0 = d5['tim0']
+        i+=1;code = "%06d" %xc
+        print("\n",i,"/",xn9, "code,", code, xtim0)
         #---
-        down_stk_inx010(rdat,code,xtim0)
+        down_stk_inx010(rdat, code, xtim0)
         
 #-------down_stk.day.xxx      
        

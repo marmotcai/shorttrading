@@ -1,114 +1,73 @@
 from __future__ import print_function
 
+import sys
 import math
-import arrow
 
+import getopt
+
+import numpy as np
 from IPython import display
 from matplotlib import pyplot as plt
 
 import pandas as pd
-from sklearn import metrics
-import tensorflow as tf
-from tensorflow.python.data import Dataset
+#from sklearn import metrics
+#import tensorflow as tf
+#from tensorflow.python.data import Dataset
 
-import keras
-from keras.models import Sequential
-from keras.layers import Dense
+#import keras
+#from keras.models import Sequential
+#from keras.layers import Dense
 
-from vendor import ztools_tq as ztq, zai_keras as zks, ztools_datadown as zddown, ztools_data as zdat, ztools as zt
+from vendor import ztools_data as zdat, ztools as zt
 
 from quant import dataobject as do
 from quant import modeling as mo
-from utils import util as tools
-from utils import params as p
+
+from utils import params as my_params
+from utils import utils as my_utils
 
 ################################################################################
 
-ma100_lst_var = [2, 3, 5, 10, 15, 20, 25, 30, 50, 100]
-ma100_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20', 'ma_25', 'ma_30', 'ma_50', 'ma_100']
-ma200_lst_var = [2, 3, 5, 10, 15, 20, 25, 30, 50, 100, 150, 200]
-ma200_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20','ma_30', 'ma_50', 'ma_100', 'ma_150', 'ma_200']
-ma030_lst_var = [2, 3, 5, 10, 15, 20, 25, 30]
-ma030_lst = ['ma_2', 'ma_3', 'ma_5', 'ma_10', 'ma_15', 'ma_20', 'ma_25', 'ma_30']
-
-xagv_lst = ['xavg1', 'xavg2', 'xavg3', 'xavg4', 'xavg5', 'xavg6', 'xavg7', 'xavg8', 'xavg9']
-
-rate_lst = ['next_rate_5', 'next_rate_10']
-
-other_lst = ['price_range', 'amp', 'amp_type']
-
-################################################################################
-
-
-################################################################################
-
-class down_data():
-    def __init__(self, data_dir = p.default_datadir):
-        self.data_dir = data_dir
-        self.rss = self.data_dir + 'xday/'
-
-        tools.mkdir(self.rss)
-
-    def download_inx(self, filename = "inx_index.csv"):
-        finx = self.data_dir + filename
-        zddown.down_stk_inx(self.rss, finx);
-
-    def downlaod_stk(self, filename = "stk_index.csv"):
-        xtyp = '5'
-        finx = self.data_dir + filename;
-        zddown.down_stk_all(self.rss, finx, xtyp)
-
-################################################################################
-
-
+#class train():
+#    def __init__(self, train_data):
+#        self.data_obj = train_data
+#
+#    def training(self, num_in=1, num_out=1):
+#        self.model = Sequential()
+#        self.model.add(Dense(num_in * 4, input_dim=num_in, activation='relu'))
+#        self.model.add(Dense(num_out))
+#        #
+#        # mean_squared_error
+#        self.model.compile('adam', 'mse', metrics=['acc'])
+#        self.model.summary()
+#
+#        # plot_model(self.model, to_file = rlog + 'mx_training.png')
+#
+#        tbCallBack = keras.callbacks.TensorBoard(log_dir = my_params.default_logdir, write_graph=True, write_images=True)
+#
+#        x_train, y_train = self.data_obj.df_train['max_price_range', 'ohlc_avg'].values, self.data_obj.df_train['next_range_price'].values
+#        x_test, y_test = self.data_obj.df_test['max_price_range', 'ohlc_avg'].values, self.data_obj.df_test['next_range_price'].values
+#
+#        self.model.fit(x_train, y_train, epochs=500, batch_size=512, callbacks=[tbCallBack])
+#
+#        tn0 = arrow.now()
+#        y_pred = self.model.predict(x_test)
+#        tn = zt.timNSec('', tn0, True)
+#        self.data_obj.df_test['y_pred'] = zdat.ds4x(y_pred, self.data_obj.df_test.index, True)
+#        self.data_obj.df_test.to_csv(my_params.default_logdir + 'df_tst.csv', index=False)
+#
+#    def draw(self):
+#        df_draw = pd.DataFrame()
+#        df_draw['range_price_type'] = self.data_obj.df_test['range_price_type']
+#        df_draw['y_pred'] = self.data_obj.df_test['y_pred']
+#        df_draw.plot()
+#        plt.show()
 
 ################################################################################
 
-class train():
-    def __init__(self, train_data):
-        self.data_obj = train_data
-
-    def training(self, num_in=1, num_out=1):
-        self.model = Sequential()
-        self.model.add(Dense(num_in * 4, input_dim=num_in, activation='relu'))
-        self.model.add(Dense(num_out))
-        #
-        # mean_squared_error
-        self.model.compile('adam', 'mse', metrics=['acc'])
-        self.model.summary()
-
-        # plot_model(self.model, to_file = rlog + 'mx_training.png')
-
-        tbCallBack = keras.callbacks.TensorBoard(log_dir = default_logdir, write_graph=True, write_images=True)
-
-        x_train, y_train = self.data_obj.df_train['max_price_range', 'ohlc_avg'].values, self.data_obj.df_train['next_range_price'].values
-        x_test, y_test = self.data_obj.df_test['max_price_range', 'ohlc_avg'].values, self.data_obj.df_test['next_range_price'].values
-
-        self.model.fit(x_train, y_train, epochs=500, batch_size=512, callbacks=[tbCallBack])
-
-        tn0 = arrow.now()
-        y_pred = self.model.predict(x_test)
-        tn = zt.timNSec('', tn0, True)
-        self.data_obj.df_test['y_pred'] = zdat.ds4x(y_pred, self.data_obj.df_test.index, True)
-        self.data_obj.df_test.to_csv(p.default_logdir + 'df_tst.csv', index=False)
-
-    def draw(self):
-        df_draw = pd.DataFrame()
-        df_draw['range_price_type'] = self.data_obj.df_test['range_price_type']
-        df_draw['y_pred'] = self.data_obj.df_test['y_pred']
-        df_draw.plot()
-        plt.show()
-
-################################################################################
-
-def testing():
-    device_name = tf.test.gpu_device_name()
-    if device_name != '/device:GPU:0':
-        raise SystemError('GPU device not found')
-    print('Found GPU at: {}'.format(device_name))
 
 def load(filename):
-    data = do.train_data(p.default_datadir, filename)
+    data = do.train_data(my_params.default_datadir, filename)
     print(data.df.tail(10))
 
     return data
@@ -121,25 +80,91 @@ def init():
     # pd.options.display.max_rows = 10
     # pd.options.display.float_format = '{:.1f}'.format
 
-    tools.mkdir(p.default_datadir)
-    tools.mkdir(p.default_logdir)
+    my_utils.mkdir(my_params.default_datadir)
+    my_utils.mkdir(my_params.default_logdir)
 
 ################################################################################
 
-# down_obj = down_data(default_datadir)
-# down_obj.download_inx()
-# down_obj.downlaod_stk()
+def usage():
+    print("-h --help,           Display this help and exit")
+    print("-v --version,        Print version infomation")
+    print("-t --test,           Test mode (e.g:-t gpu)")
+    print("-d --download,       Download data (e.g:-d ./data/)")
+    print("-m --modeling,       Training data build model")
+    print("-e --evaluation,     Evaluation model")
 
-init()
-model = mo.model(load("601988.csv"))
-model.modeling('rate')
-model.building()
+def setting(setting):
+    if "=" in setting:
+        item, value = setting.split("=")
+    else:
+        return
 
-# train_obj = train(data_obj)
-# train_obj.training()
-# train_obj.draw()
+    if len(item) <= 0 or len(value) <= 0:
+        print("setting params error!")
+        return
 
-exit(0)
+    my_params.global_obj.set_item_value(item, value)
+
+def download(params):
+    type = ""
+    if "=" in params:
+        type, filename = params.split("=")
+    else:
+        if "inx" in params:
+            type = "inx"
+        if "stk" in params:
+            type = "stk"
+        filename = params
+
+    if len(filename) <= 0:
+        print("download params error!")
+        return
+
+    if not my_utils.path_exists(filename):
+        filename = my_params.global_obj.data_path + filename
+    if not my_utils.path_exists(filename):
+        print(filename + " is not exists")
+        return
+
+    down_obj = do.download()
+    if type == "inx":
+        down_obj.download_inx(my_params.global_obj.day_path, filename)
+    if type == "stk":
+        down_obj.downlaod_stk(my_params.global_obj.day_path, filename)
+
+def test(type):
+    if type in ("gpu"):
+        print(my_utils.test_gpu())
+
+if __name__ == '__main__':
+    try:
+        options, args = getopt.getopt(sys.argv[1:], "hvs:t:d:m:e:", ["help", "version", "setting=", "test=", "download=", "modeling=", "evaluation="])
+    except getopt.GetoptError:
+        sys.exit()
+    for name, value in options:
+        if name in ("-h", "--help"):
+            usage()
+        if name in ("-v", "--version"):
+            print("version is " + my_params.version)
+            my_params.global_obj.print_current_information()
+        if name in ("-s", "--setting"):
+            setting(value)
+        if name in ("-t", "--test"):
+            test(value)
+        if name in ("-d", "--download"):
+            download(value)
+
+
+    # init()
+    # model = mo.model(load("601988.csv"))
+    # model.modeling('rate')
+    # model.building()
+
+    # train_obj = train(data_obj)
+    # train_obj.training()
+    # train_obj.draw()
+
+    exit(0)
 
 california_housing_dataframe = pd.read_csv("./data/california_housing_train.csv", sep=",")
 
