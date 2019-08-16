@@ -1,6 +1,7 @@
 import arrow
 import keras
 from keras.utils import plot_model
+from keras.models import load_model
 
 from vendor import ztools as zt
 from vendor import zai_keras as zks
@@ -15,7 +16,7 @@ class model():
     def modeling(self, type = 'rate'): # 建模过程
         self.do.prepared(type)
 
-    def building(self):
+    def building(self, model_filename=""):
 
         # 分离训练和测试数据
         self.df_train, self.df_test = do.util.split(self.do.df, 0.6)
@@ -52,16 +53,30 @@ class model():
 
         mx = zks.lstm020typ(num_in, num_out)
         mx.summary()
-        plot_model(mx, to_file = my_params.default_datadir + 'model.png')
+        plot_model(mx, to_file = my_params.default_logpath + 'model.png')
 
         print('\n#4 模型训练 fit')
-        tbCallBack = keras.callbacks.TensorBoard(log_dir = my_params.default_logdir, write_graph = True, write_images=True)
+        tbCallBack = keras.callbacks.TensorBoard(log_dir = my_params.default_logpath, write_graph = True, write_images=True)
         tn0 = arrow.now()
         mx.fit(self.x_train, self.y_train, epochs = 500, batch_size = 512, callbacks = [tbCallBack])
         tn = zt.timNSec('', tn0, True)
 
         eva_obj = eva.evaluation(self.do)
         eva_obj.predict(mx, self.df_test, self.x_test)
+
+        self.save(mx, model_filename)
+
+    def save(self, model, filename):
+        if len(filename) > 0:
+            model.save(filename)
+
+    def load(self, filename):
+        return load_model(filename)
+
+    def eva(self, mode_filename):
+        model = self.load(mode_filename)
+        eva_obj = eva.evaluation(self.do)
+        eva_obj.predict(model, self.do.df, self.do.df)
 #
      #   print('\n#5 模型预测 predict')
      #   tn0 = arrow.now()

@@ -12,13 +12,14 @@ default_section = 'default'
 default_datapath = './data/'
 default_daypath = 'day/'
 default_inxpath = 'inx/'
+default_model = 'rate'
 
 default_logpath = './data/logs/'
 
 ################################################################################
 
 ohlc_lst = ['open', 'high', 'low', 'close']
-volume_lst = ['volume_lst']
+volume_lst = ['volume']
 profit_lst = ['next_profit_1', 'next_profit_2', 'next_profit_3', 'next_profit_4', 'next_profit_5', 'next_profit_6', 'next_profit_7', 'next_profit_8', 'next_profit_9', 'next_profit_10']
 
 ################################################################################

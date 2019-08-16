@@ -67,7 +67,7 @@ from utils import utils as my_utils
 
 
 def load(filename):
-    data = do.train_data(my_params.default_datadir, filename)
+    data = do.train_data(filename)
     print(data.df.tail(10))
 
     return data
@@ -132,6 +132,53 @@ def download(params):
     if type == "stk":
         down_obj.downlaod_stk(my_params.global_obj.day_path, filename)
 
+def modeling(params):
+    type = ""
+    if "|" in params:
+        type, filepath = params.split("|")
+    else:
+        type = my_params.default_model
+        filepath = params
+
+    if not my_utils.path_exists(filepath):
+        filepath = my_params.global_obj.day_path + filepath
+    if not my_utils.path_exists(filepath):
+        print(filepath + " is not exists")
+        return
+
+    model = mo.model(load(filepath))
+    model.modeling(type)
+    model.building(filepath + ".mod")
+
+def evaluation(params):
+    type = ""
+    if "|" in params:
+        type, filepath = params.split("|")
+    else:
+        type = my_params.default_model
+        filepath = params
+
+    if "," in filepath:
+        mod_filepath, data_filepath = filepath.split(",")
+    else:
+        return
+
+    if not my_utils.path_exists(mod_filepath):
+        mod_filepath = my_params.global_obj.day_path + mod_filepath
+    if not my_utils.path_exists(mod_filepath):
+        print(mod_filepath + " is not exists")
+        return
+
+    if not my_utils.path_exists(data_filepath):
+        data_filepath = my_params.global_obj.day_path + data_filepath
+    if not my_utils.path_exists(data_filepath):
+        print(data_filepath + " is not exists")
+        return
+
+    model = mo.model(load(data_filepath))
+    model.modeling(type)
+    model.eva(mod_filepath)
+
 def test(type):
     if type in ("gpu"):
         print(my_utils.test_gpu())
@@ -153,6 +200,10 @@ if __name__ == '__main__':
             test(value)
         if name in ("-d", "--download"):
             download(value)
+        if name in ("-m", "--modeling"):
+            modeling(value)
+        if name in ("-e", "--evaluation"):
+            evaluation(value)
 
 
     # init()

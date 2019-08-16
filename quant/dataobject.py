@@ -35,7 +35,7 @@ class download():
         if my_utils.path_exists(downpath) == False:
             my_utils.mkdir(downpath)
 
-        xtyp = '5'
+        xtyp = 'D' # xtyp = '5'
         zddown.down_stk_all(downpath, filename, xtyp)
 
 
@@ -136,13 +136,10 @@ class util():
 
 class  train_data():
 
-    def __init__(self, data_dir, data_file):
+    def __init__(self, data_file):
 
         self.model_type = {'rate': self.model_rate, 'amp': self.model_amp}  # 定义策略执行函数
-
-        self.data_dir = data_dir
-        self.data_file = data_file
-        self.df = pd.read_csv(data_dir + data_file, index_col = 0)
+        self.df = pd.read_csv(data_file, index_col = 0)
 
     def load(self, filepath):
         f = open(filepath, 'rb')
