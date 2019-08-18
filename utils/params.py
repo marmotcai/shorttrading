@@ -36,8 +36,6 @@ other_lst = ['price_range', 'amp', 'amp_type']
 
 ################################################################################
 
-
-
 class config:
     def __init__(self, filename=configfile):
         self.conf = configparser.ConfigParser()
@@ -84,7 +82,7 @@ class params:
     def print_current_information(self):
         print("-----------------------------")
         print("current_information:")
-        print("main_path:" + self.main_path)
+        print("main_path:" + self.data_path)
         print("day_path:" + self.day_path)
         print("inx_path:" + self.inx_path)
         print("-----------------------------")

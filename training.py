@@ -88,8 +88,9 @@ def init():
 def usage():
     print("-h --help,           Display this help and exit")
     print("-v --version,        Print version infomation")
+    print("-s --setting,        Set params (e.g: -s datapath=./data")
     print("-t --test,           Test mode (e.g:-t gpu)")
-    print("-d --download,       Download data (e.g:-d ./data/)")
+    print("-d --download,       Download data (e.g:-d inx=inx_code.csv)")
     print("-m --modeling,       Training data build model")
     print("-e --evaluation,     Evaluation model")
 
