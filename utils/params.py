@@ -6,15 +6,22 @@ from utils import utils as my_utils
 ################################################################################
 
 version = 'Atom Quant Analysis System, Version: 0.0.1'
+app_name = 'aqas'
 
-configfile = './config.ini'
-default_section = 'default'
 default_datapath = './data/'
+default_logpath = default_datapath + 'logs/'
+default_pid = default_datapath + app_name + '.pid'
+
+default_configfile = './config.ini'
+default_section_setting = 'setting'
+default_section_schedule = 'schedule_'
+
 default_daypath = 'day/'
 default_inxpath = 'inx/'
-default_model = 'rate'
+default_inx_filename = 'my_inx_code.csv'
+default_stk_filename = 'my_stk_code.csv'
 
-default_logpath = './data/logs/'
+default_model = 'rate'
 
 ################################################################################
 
@@ -36,55 +43,87 @@ other_lst = ['price_range', 'amp', 'amp_type']
 
 ################################################################################
 
+class cmder:
+    def __init__(self, cmd, time):
+        self.cmd = cmd
+        self.time = time
+
 class config:
-    def __init__(self, filename=configfile):
+    def __init__(self, filename = default_configfile):
         self.conf = configparser.ConfigParser()
-        self.filename = filename
-        if my_utils.path_exists(self.filename) == False:
-            self.writeconfig('init')
 
-        self.conf.read(self.filename)
-        section = self.conf.sections()[0]
-        print(section) # print(self.conf.options(section))
-        print(self.conf.items(section))
+        if my_utils.path_exists(filename) == False:
+            self.init_config(filename)
 
-    def readconfig(self, section='default', item=''):
-        if len(section) <= 0:
-            section = self.conf.sections()[0]
-        return self.conf.get(section, item)
+        self.load_config(filename)
 
-    def writeconfig(self, section=default_section, item='', value=''):
-        if section == 'init':
-            section = default_section
-            # 写入配置文件
-            self.conf.add_section('default')  # 添加section
-            # 添加值
-            self.conf.set(section, 'datapath', default_datapath)
-            self.conf.set(section, 'daypath', default_daypath)
-            self.conf.set(section, 'inxpath', default_inxpath)
-        else:
-            self.conf.set(section, item, value)
+    def clear(self):
 
-        # 写入文件
-        with open(self.filename, 'w') as fw:
+        self.data_path = ""
+        self.day_path = ""
+        self.inx_path = ""
+
+        self.schedules = []
+
+    def init_config(self, filename):
+        self.conf.add_section(default_section_setting)
+        self.conf.set(default_section_setting, 'datapath', default_datapath)
+        self.conf.set(default_section_setting, 'daypath', default_daypath)
+        self.conf.set(default_section_setting, 'inxpath', default_inxpath)
+
+        section_schedule = default_section_schedule + "0"
+        self.conf.add_section(section_schedule)
+        self.conf.set(section_schedule, 'cmd', "-d " + default_inx_filename)
+        self.conf.set(section_schedule, 'at', "seconds,10")
+
+        with open(filename, 'w+') as fw:
             self.conf.write(fw)
 
-class params:
-    def __init__(self, filename=configfile):
-        self.config_obj = config(filename)
-        self.data_path = self.config_obj.readconfig(default_section, "datapath")
-        self.day_path = self.data_path + self.config_obj.readconfig(default_section, "daypath")
-        self.inx_path = self.data_path + self.config_obj.readconfig(default_section, "inxpath")
+    def load_config(self, filename):
+        self.clear()
+        self.conf.read(filename)  # 装载配置文件
 
-    def set_item_value(self, item, value):
-        self.config_obj.writeconfig(default_section, item, value)
+        self.data_path = self.conf.get(default_section_setting, 'datapath')
+        self.day_path = self.conf.get(default_section_setting, 'daypath')
+        self.inx_path = self.conf.get(default_section_setting, 'inxpath')
+
+        self.schedules = []
+        index = 0
+        while True:
+            section_schedule = default_section_schedule + str(index)
+            try:
+                cmd = self.conf.get(section_schedule, 'cmd')
+                time = self.conf.get(section_schedule, 'at')
+
+                self.schedules.append(cmder(cmd, time))
+            except:
+                break
+
+            index = index + 1
+
+        # section = self.conf.sections()[0]
+        # print(section) # print(self.conf.options(section))
+        # print(self.conf.items(section))
 
     def print_current_information(self):
         print("-----------------------------")
-        print("current_information:")
-        print("main_path:" + self.data_path)
+        print(version)
+        print("***********")
+        print("data_path:" + self.data_path)
         print("day_path:" + self.day_path)
         print("inx_path:" + self.inx_path)
+        print("***********")
+
+        print("schedule count: " +  str(len(self.schedules)))
+        for index in range(0, len(self.schedules)):
+            print("***********")
+            section_schedule = default_section_schedule + str(index)
+            cmder = self.schedules[index]
+            print(section_schedule + ":")
+            print("cmd: " + cmder.cmd)
+            print("at: " + cmder.time)
+            print("***********")
+
         print("-----------------------------")
 
-global_obj = params()
+g_config = config()
