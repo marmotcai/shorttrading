@@ -53,33 +53,6 @@ def setting(setting):
 
     my_params.global_obj.set_item_value(item, value)
 
-def download(params):
-    type = ""
-    if "=" in params:
-        type, filename = params.split("=")
-    else:
-        if "inx" in params:
-            type = "inx"
-        if "stk" in params:
-            type = "stk"
-        filename = params
-
-    if len(filename) <= 0:
-        print("download params error!")
-        return
-
-    if not my_utils.path_exists(filename):
-        filename = my_params.global_obj.data_path + filename
-    if not my_utils.path_exists(filename):
-        print(filename + " is not exists")
-        return
-
-    down_obj = do.download()
-    if type == "inx":
-        down_obj.download_inx(my_params.global_obj.day_path, filename)
-    if type == "stk":
-        down_obj.downlaod_stk(my_params.global_obj.day_path, filename)
-
 def modeling(params):
     type = ""
     if "|" in params:
@@ -89,7 +62,7 @@ def modeling(params):
         filepath = params
 
     if not my_utils.path_exists(filepath):
-        filepath = my_params.global_obj.day_path + filepath
+        filepath = my_params.g_config.day_path + filepath
     if not my_utils.path_exists(filepath):
         print(filepath + " is not exists")
         return
@@ -112,13 +85,13 @@ def evaluation(params):
         return
 
     if not my_utils.path_exists(mod_filepath):
-        mod_filepath = my_params.global_obj.day_path + mod_filepath
+        mod_filepath = my_params.g_config.day_path + mod_filepath
     if not my_utils.path_exists(mod_filepath):
         print(mod_filepath + " is not exists")
         return
 
     if not my_utils.path_exists(data_filepath):
-        data_filepath = my_params.global_obj.day_path + data_filepath
+        data_filepath = my_params.g_config.day_path + data_filepath
     if not my_utils.path_exists(data_filepath):
         print(data_filepath + " is not exists")
         return
@@ -133,6 +106,7 @@ def test(type):
 
 def loadconfig(filename):
     my_params.g_config.load_config(filename)
+
     for index in range(0, len(my_params.g_config.schedules)):
         cmder = my_params.g_config.schedules[index]
         at = cmder.time.split(",")
@@ -173,7 +147,7 @@ def main(argv):
         if name in ("-t", "--test"):
             test(value)
         if name in ("-d", "--download"):
-            download(value)
+            do.data_download(value)
         if name in ("-m", "--modeling"):
             modeling(value)
         if name in ("-e", "--evaluation"):

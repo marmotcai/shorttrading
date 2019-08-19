@@ -2,11 +2,12 @@
 
 import configparser
 from utils import utils as my_utils
+from utils import logger as log
 
 ################################################################################
 
 version = 'Atom Quant Analysis System, Version: 0.0.1'
-app_name = 'aqas'
+app_name = 'qas'
 
 default_datapath = './data/'
 default_logpath = default_datapath + 'logs/'
@@ -68,8 +69,8 @@ class config:
     def init_config(self, filename):
         self.conf.add_section(default_section_setting)
         self.conf.set(default_section_setting, 'datapath', default_datapath)
-        self.conf.set(default_section_setting, 'daypath', default_daypath)
-        self.conf.set(default_section_setting, 'inxpath', default_inxpath)
+        self.conf.set(default_section_setting, 'daypath', default_datapath + default_daypath)
+        self.conf.set(default_section_setting, 'inxpath', default_datapath + default_inxpath)
 
         section_schedule = default_section_schedule + "0"
         self.conf.add_section(section_schedule)
@@ -127,3 +128,4 @@ class config:
         print("-----------------------------")
 
 g_config = config()
+g_log = log.logger(default_logpath + app_name + '.log', app_name)

@@ -14,11 +14,11 @@ from utils import utils as my_utils
 
 class download():
     def __init__(self):
-        print("start download data ..")
+        my_params.g_log.info("start download ...")
 
     def download_inx(self, downpath = my_params.default_datapath, filename = "inx_code.csv"):
         if my_utils.path_exists(filename) == False:
-            print("inx file is not exists and exit")
+            my_params.g_log.error("inx file is not exists and exit")
             return False
 
         if my_utils.path_exists(downpath) == False:
@@ -29,7 +29,7 @@ class download():
 
     def downlaod_stk(self, downpath = my_params.default_datapath, filename = "stk_code.csv"):
         if my_utils.path_exists(filename) == False:
-            print("stk file is not exists and exit")
+            my_params.g_log.error("stk file is not exists and exit")
             return False
 
         if my_utils.path_exists(downpath) == False:
@@ -38,6 +38,34 @@ class download():
         xtyp = 'D' # xtyp = '5'
         zddown.down_stk_all(downpath, filename, xtyp)
 
+def data_download(params):
+    type = ""
+    if "=" in params:
+        type, filename = params.split("=")
+    else:
+        if "inx" in params:
+            type = "inx"
+        if "stk" in params:
+            type = "stk"
+        filename = params
+
+    if len(filename) <= 0:
+        my_params.g_log.error("download params error!")
+        return
+
+    if not my_utils.path_exists(filename):
+        filename = my_params.g_config.data_path + filename
+    if not my_utils.path_exists(filename):
+        my_params.g_log.error(filename + " is not exists")
+        return
+
+    down_obj = download()
+    if type == "inx":
+        down_obj.download_inx(my_params.g_config.day_path, filename)
+    if type == "stk":
+        down_obj.downlaod_stk(my_params.g_config.day_path, filename)
+
+################################################################################
 
 class util():
     def __init__(self):

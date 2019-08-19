@@ -1,10 +1,13 @@
 import logging
+from utils import params as my_params
 
 ################################################################################
 
 class logger():
-    def __init__(self, logfilename, level = logging.INFO):
-        self.logger = logging.getLogger(__name__)
+    def __init__(self, logfilename, appname = "", level = logging.INFO):
+        if len(appname) <= 0:
+            appname = __name__
+        self.logger = logging.getLogger(appname)
         self.logger.setLevel(level = logging.INFO)
         self.handler = logging.FileHandler(logfilename)
         self.handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))

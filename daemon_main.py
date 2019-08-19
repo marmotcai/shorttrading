@@ -15,11 +15,6 @@ class TDaemon(dm.Daemon):
 
         my_params.g_config.print_current_information()
 
-    def do(self):
-        print('test')
-        # self.log_obj.info("start download ...")
-        # my_train.download('inx_code.csv')
-
     def run(self):
         my_train.loadconfig(my_params.default_configfile)
 
