@@ -11,6 +11,7 @@ from quant import modeling as mo
 
 from utils import params as my_params
 from utils import utils as my_utils
+import update as my_update
 
 ################################################################################
 
@@ -129,7 +130,7 @@ def loadconfig(filename):
 
 def main(argv):
     try:
-        options, args = getopt.getopt(argv, "hvil:s:t:d:m:e:", ["help", "version", "load=", "setting=", "test=", "download=", "modeling=", "evaluation="])
+        options, args = getopt.getopt(argv, "hvuil:s:t:d:m:e:", ["help", "version", "update", "load=", "setting=", "test=", "download=", "modeling=", "evaluation="])
     except getopt.GetoptError:
         sys.exit()
 
@@ -138,6 +139,8 @@ def main(argv):
             usage()
         if name in ("-v", "--version"):
             my_params.g_config.print_current_information()
+        if name in ("-u", "--update"):
+            my_update.main(argv)
         if name in ("-i", "--initialize"):
             usage()
         if name in ("-l", "--load"):
@@ -156,4 +159,4 @@ def main(argv):
 if __name__ == '__main__':
     main(sys.argv[1:])
 
-    exit(0)
+    sys.exit()
