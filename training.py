@@ -3,6 +3,8 @@ from __future__ import print_function
 import sys
 import time
 import getopt
+import multiprocessing
+import subprocess
 
 from utils import schedule as sc
 
@@ -105,30 +107,58 @@ def test(type):
     if type in ("gpu"):
         print(my_utils.test_gpu())
 
+class process(multiprocessing.Process):
+    def __init__(self, cmd, args):
+        multiprocessing.Process.__init__(self)
+        self.args = []
+        self.args.append(cmd)
+        for j in range(0, len(args)):
+            self.args.append(args[j])
+
+        print(self.args)
+
+    def run(self):
+        subprocess.check_call(self.args)
+
 def loadconfig(filename):
     my_params.g_config.load_config(filename)
 
     for index in range(0, len(my_params.g_config.schedules)):
         cmder = my_params.g_config.schedules[index]
         at = cmder.time.split(",")
-        args = cmder.cmd.split(" ")
-        if len(at) > 0 and at[0] in ("seconds"):
-            sc.every(int(at[1])).seconds.do(main, args)
+        cmdstr = cmder.cmd.split(",")
 
-        if len(at) > 0 and at[0] in ("minutes"):
-            sc.every(int(at[1])).minutes.do(main, args)
+        if len(cmdstr) > 1:
+            args = cmdstr[1].split(" ")
+            cmdstr = cmdstr[0]
+        else:
+            args = cmder.cmd.split(" ")
+            cmdstr = ""
 
-        if len(at) > 0 and at[0] in ("hour"):
-            sc.every(int(at[1])).hour.do(main, args)
+        schedule(at, cmdstr, args)
 
-        if len(at) > 0 and at[0] in ("day"):
-            sc.every().day.at(at[1]).do(main, args)
+def schedule(at, cmd, args):
+    if len(at) > 0 and at[0] in ("seconds"):
+        sc.every(int(at[1])).seconds.do(main, cmd, args)
+
+    if len(at) > 0 and at[0] in ("minutes"):
+        sc.every(int(at[1])).minutes.do(main, cmd, args)
+
+    if len(at) > 0 and at[0] in ("hour"):
+        sc.every(int(at[1])).hour.do(main, cmd, args)
+
+    if len(at) > 0 and at[0] in ("day"):
+        sc.every().day.at(at[1]).do(main, cmd, args)
 
     while True:
         sc.run_pending()
         time.sleep(5)
 
-def main(argv):
+def main(cmd, argv):
+    if len(cmd) > 0:
+        process(cmd, argv).start()
+        return
+
     try:
         options, args = getopt.getopt(argv, "hvuil:s:t:d:m:e:", ["help", "version", "update", "load=", "setting=", "test=", "download=", "modeling=", "evaluation="])
     except getopt.GetoptError:
@@ -157,6 +187,6 @@ def main(argv):
             evaluation(value)
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main("", sys.argv[1:])
 
     sys.exit()

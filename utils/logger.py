@@ -1,5 +1,4 @@
 import logging
-from utils import params as my_params
 
 ################################################################################
 

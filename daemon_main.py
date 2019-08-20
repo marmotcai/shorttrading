@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 
 from utils import logger as log
 from utils import daemon as dm
@@ -25,7 +24,6 @@ def usage():
     print("usage : start, stop , restart")
 
 if __name__ == '__main__':
-
     if len(sys.argv) == 1:
         # unittest.main()
         usage()
