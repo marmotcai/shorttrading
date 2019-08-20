@@ -15,72 +15,6 @@ from utils import utils as my_utils
 
 ################################################################################
 
-def loaddata(filename):
-    data = my_do.train_data(filename)
-    print(data.df.tail(10))
-    return data
-
-def modeling(params):
-    model_lst = []
-    if "|" in params:
-        model_lst = params.split("|")
-    else:
-        model_lst.append(my_params.default_model)
-        model_lst.append(params)
-
-    if len(model_lst) < 2:
-        my_params.g_log.error("modeling params is error!")
-        return
-
-    mod_type = my_params.default_model
-    data_filepath = ""
-    mod_filepath = ""
-
-    for j in range(0, len(model_lst)):
-        param = model_lst[j]
-        suffix = os.path.splitext(param)[1]
-        if len(suffix) <= 0:
-            mod_type = param
-        else:
-            filepath = param
-
-            if '.csv' == suffix.lower():
-                if not my_utils.path_exists(filepath):
-                    filepath = my_params.g_config.day_path + filepath
-                if not my_utils.path_exists(filepath):
-                    print(filepath + " is not exists")
-                    return
-
-                data_filepath = filepath
-
-            if '.mod' == suffix.lower():
-                mod_filepath = filepath
-
-    mo = model()
-    if len(data_filepath) > 0:
-        mo.setdata(data_filepath)
-
-    if len(mod_filepath) <= 0:
-        mod_filepath = filepath + ".mod"
-
-    mo.modeling(mod_type)
-    mo.building(mod_filepath)
-
-################################################################################
-
-def main(argv):
-    try:
-        options, args = getopt.getopt(argv, "m:", ["modeling="])
-
-    except getopt.GetoptError:
-        sys.exit()
-
-    for name, value in options:
-        if name in ("-m", "--modeling"):
-            modeling(value)
-
-################################################################################
-
 class model():
     def __init__(self, modfilename = ""):
         self.do = None
@@ -162,14 +96,75 @@ class model():
 
         x_test = my_do.util.get_features(self.do.df, my_params.ohlc_lst + my_params.volume_lst + my_params.profit_lst)
         eva_obj.predict(model, self.do.df, x_test)
-#
-     #   print('\n#5 模型预测 predict')
-     #   tn0 = arrow.now()
-     #   y_pred0 = mx.predict(self.x_test)
-     #   tn = zt.timNSec('', tn0, True)
-     #   y_pred = np.argmax(y_pred0, axis = 1) + 1
-     #   #
-     #   self.df_test['y_pred'] = zdat.ds4x(y_pred, self.df_test.index, True)
-     #   self.df_test.to_csv(p.default_datadir + 'my.csv', index = False)
-##
-     #   print('NaN的数量:', self.df_test.isnull().sum().sum())
+
+################################################################################
+
+def loaddata(filename):
+    data = my_do.train_data(filename)
+    print(data.df.tail(10))
+    return data
+
+def modeling(params):
+    model_lst = []
+    if "|" in params:
+        model_lst = params.split("|")
+    else:
+        model_lst.append(my_params.default_model)
+        model_lst.append(params)
+
+    if len(model_lst) < 2:
+        my_params.g_log.error("modeling params is error!")
+        return
+
+    mod_type = my_params.default_model
+    data_filepath = ""
+    mod_filepath = ""
+
+    for j in range(0, len(model_lst)):
+        param = model_lst[j]
+        suffix = os.path.splitext(param)[1]
+        if len(suffix) <= 0:
+            mod_type = param
+        else:
+            filepath = param
+
+            if '.csv' == suffix.lower():
+                if not my_utils.path_exists(filepath):
+                    filepath = my_params.g_config.day_path + filepath
+                if not my_utils.path_exists(filepath):
+                    print(filepath + " is not exists")
+                    return
+
+                data_filepath = filepath
+
+            if '.mod' == suffix.lower():
+                mod_filepath = filepath
+
+    mo = model()
+    if len(data_filepath) > 0:
+        mo.setdata(data_filepath)
+
+    if len(mod_filepath) <= 0:
+        mod_filepath = filepath + ".mod"
+
+    mo.modeling(mod_type)
+    mo.building(mod_filepath)
+
+################################################################################
+
+def main(argv):
+    try:
+        options, args = getopt.getopt(argv, "m:", ["modeling="])
+
+    except getopt.GetoptError:
+        sys.exit()
+
+    for name, value in options:
+        if name in ("-m", "--modeling"):
+            modeling(value)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
+    sys.exit()
+
+################################################################################

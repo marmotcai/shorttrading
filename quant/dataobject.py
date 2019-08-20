@@ -63,6 +63,10 @@ def main(argv):
             if os.path.isfile(value):
                 download_from_inxfile(value)
 
+if __name__ == '__main__':
+    main(sys.argv[1:])
+    sys.exit()
+
 class download():
     def __init__(self):
         my_params.g_log.info("start download ...")
@@ -205,8 +209,6 @@ class  train_data():
         pickle.dump(df, f)
         f.close()
 
-
-
     def training(self, df):
         return df
 
@@ -234,76 +236,6 @@ class  train_data():
     def prepared(self, model_type = 'rate'):
         self.model_execution = self.model_type[model_type]
         self.model_execution(self. df)
-
-        # df = self.load(default_datadir + 'c.dat')
-        # self.save(default_datadir + 'c.dat', self.df)
-
-        #############################################################################################################
-
-        # 分离训练和测试数据
-    #   self.df_train, self.df_test = self.split(self.df, 0.6)
-
-    #   # 构建训练特征数据
-    #   other_features_lst = ohlc_lst + profit_lst # + xagv_lst + ma100_lst + other_lst
-    #   self.x_train = util.get_features(self.df_train, other_features_lst)
-    #   self.x_test = util.get_features(self.df_test, other_features_lst)
-
-    #   #############################################################################################################
-
-    #   # 构建特征，也就是结果值Y
-    #   self.y_train = util.prepared_y(self.df_train, 'next_rate_10_type')
-    #   self.y_test = util.prepared_y(self.df_test, 'next_rate_10_type')
-
-        #############################################################################################################
-
-    #   y_lst = self.y_train[0]
-    #   x_lst = other_features_lst
-
-    #   num_in, num_out = len(x_lst), len(y_lst)
-
-    #   print('\n self.df_test.tail()', self.df_test.tail())
-    #   print('\n self.x_train.shape,', self.x_train.shape)
-    #   print('\n type(self.x_train),', type(self.x_train))
-
-    #   rxn, txn = self.x_train.shape[0], self.x_test.shape[0]
-    #   self.x_train, self.x_test = self.x_train.reshape(rxn, num_in, -1), self.x_test.reshape(txn, num_in, -1)
-    #   print('\n x_train.shape,', self.x_train.shape)
-    #   print('\n type(x_train),', type(self.x_train))
-
-    #   print('\n num_in, num_out:', num_in, num_out)
-
-        # mx = zks.rnn010(num_in, num_out)
-        # mx = zks.lstm010(num_in, num_out)
-     #   mx = zks.lstm020typ(num_in, num_out)
-     #   #
-     #   mx.summary()
-     #   plot_model(mx, to_file = default_datadir + 'model.png')
-#
-     #   print('\n#4 模型训练 fit')
-     #   tbCallBack = keras.callbacks.TensorBoard(log_dir = default_logdir, write_graph = True, write_images=True)
-     #   tn0 = arrow.now()
-     #   mx.fit(self.x_train, self.y_train, epochs = 500, batch_size = 512, callbacks = [tbCallBack])
-     #   tn = zt.timNSec('', tn0, True)
-#
-     #   print('\n#5 模型预测 predict')
-     #   tn0 = arrow.now()
-     #   y_pred0 = mx.predict(self.x_test)
-     #   tn = zt.timNSec('', tn0, True)
-     #   y_pred = np.argmax(y_pred0, axis = 1) + 1
-     #   #
-     #   self.df_test['y_pred'] = zdat.ds4x(y_pred, self.df_test.index, True)
-     #   self.df_test.to_csv(default_datadir + 'my.csv', index = False)
-#
-     #   print('NaN的数量:', self.df_test.isnull().sum().sum())
-#
-     #   print('\n#6 acc准确度分析')
-     #   print('\nky0=10')
-#
-     #   dacc, dfx, a10 = ztq.ai_acc_xed2ext(self.df_test.y, self.df_test.y_pred, ky0 = 3, fgDebug = True)
-#
-     #   x1, x2 = self.df_test['y'].value_counts(), self.df_test['y_pred'].value_counts()
-     #   zt.prx('x1', x1);
-     #   zt.prx('x2', x2)
 
 ################################################################################
 
