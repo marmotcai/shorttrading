@@ -1,3 +1,7 @@
+import os
+import sys
+import getopt
+
 import pickle
 import pandas as pd
 
@@ -11,6 +15,53 @@ from utils import params as my_params
 from utils import utils as my_utils
 
 ################################################################################
+
+def download_from_path(path):
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            suffix = os.path.splitext(file)[1]
+            if '.csv' == suffix.lower():
+                download_from_inxfile(os.path.join(root, file))
+
+def download_from_inxfile(filepath):
+    type = ""
+    if "=" in filepath:
+        type, filename = filepath.split("=")
+    else:
+        if "inx" in filepath:
+            type = "inx"
+        if "stk" in filepath:
+            type = "stk"
+        filename = filepath
+
+    if len(filename) <= 0:
+        my_params.g_log.error("download params error!")
+        return
+
+    if not my_utils.path_exists(filename):
+        filename = my_params.g_config.data_path + filename
+    if not my_utils.path_exists(filename):
+        my_params.g_log.error(filename + " is not exists")
+        return
+
+    down_obj = download()
+    if type == "inx":
+        down_obj.download_inx(my_params.g_config.day_path, filename)
+    if type == "stk":
+        down_obj.downlaod_stk(my_params.g_config.day_path, filename)
+
+def main(argv):
+    try:
+        options, args = getopt.getopt(argv, "d:", ["download="])
+    except getopt.GetoptError:
+        sys.exit()
+
+    for name, value in options:
+        if name in ("-d", "--download"):
+            if os.path.isdir(value):
+                download_from_path(value)
+            if os.path.isfile(value):
+                download_from_inxfile(value)
 
 class download():
     def __init__(self):
@@ -37,33 +88,6 @@ class download():
 
         xtyp = 'D' # xtyp = '5'
         zddown.down_stk_all(downpath, filename, xtyp)
-
-def data_download(params):
-    type = ""
-    if "=" in params:
-        type, filename = params.split("=")
-    else:
-        if "inx" in params:
-            type = "inx"
-        if "stk" in params:
-            type = "stk"
-        filename = params
-
-    if len(filename) <= 0:
-        my_params.g_log.error("download params error!")
-        return
-
-    if not my_utils.path_exists(filename):
-        filename = my_params.g_config.data_path + filename
-    if not my_utils.path_exists(filename):
-        my_params.g_log.error(filename + " is not exists")
-        return
-
-    down_obj = download()
-    if type == "inx":
-        down_obj.download_inx(my_params.g_config.day_path, filename)
-    if type == "stk":
-        down_obj.downlaod_stk(my_params.g_config.day_path, filename)
 
 ################################################################################
 

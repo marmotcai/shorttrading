@@ -8,19 +8,14 @@ import subprocess
 
 from utils import schedule as sc
 
-from quant import dataobject as do
-from quant import modeling as mo
+from quant import dataobject as my_do
+from quant import modeling as my_mo
 
 from utils import params as my_params
 from utils import utils as my_utils
 import update as my_update
 
 ################################################################################
-
-def loaddata(filename):
-    data = do.train_data(filename)
-    print(data.df.tail(10))
-    return data
 
 def init():
     # testing()
@@ -56,23 +51,10 @@ def setting(setting):
 
     my_params.global_obj.set_item_value(item, value)
 
-def modeling(params):
-    type = ""
-    if "|" in params:
-        type, filepath = params.split("|")
-    else:
-        type = my_params.default_model
-        filepath = params
-
-    if not my_utils.path_exists(filepath):
-        filepath = my_params.g_config.day_path + filepath
-    if not my_utils.path_exists(filepath):
-        print(filepath + " is not exists")
-        return
-
-    model = mo.model(loaddata(filepath))
-    model.modeling(type)
-    model.building(filepath + ".mod")
+def loaddata(filename):
+    data = my_do.train_data(filename)
+    print(data.df.tail(10))
+    return data
 
 def evaluation(params):
     type = ""
@@ -99,7 +81,7 @@ def evaluation(params):
         print(data_filepath + " is not exists")
         return
 
-    model = mo.model(loaddata(data_filepath))
+    model = my_mo.model(loaddata(data_filepath))
     model.modeling(type)
     model.eva(mod_filepath)
 
@@ -180,13 +162,12 @@ def main(cmd, argv):
         if name in ("-t", "--test"):
             test(value)
         if name in ("-d", "--download"):
-            do.data_download(value)
+            my_do.main(argv)
         if name in ("-m", "--modeling"):
-            modeling(value)
+            my_mo.main(argv)
         if name in ("-e", "--evaluation"):
             evaluation(value)
 
 if __name__ == '__main__':
     main("", sys.argv[1:])
-
     sys.exit()
