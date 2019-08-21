@@ -27,7 +27,7 @@ RUN pip install --upgrade pip
 FROM builder as qas
 
 ENV APP_NAME=shorttrading
-ENV GIT_URL=https://marmotcai:aa!112233@github.com/marmotcai/shorttrading.git
+ENV GIT_URL=https://xxxxxx:xxxxxx@github.com/marmotcai/shorttrading.git
 
 ENV WORK_DIR=/root/${APP_NAME}
 
@@ -37,7 +37,7 @@ COPY ./ $WORK_DIR
 
 WORKDIR $WORK_DIR
 
-RUN pip freeze > requirements.txt
+# RUN pip freeze > requirements.txt
 RUN pip install -r requirements.txt
 
 CMD ["python3", "./training.py -h"]
