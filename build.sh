@@ -2,6 +2,7 @@
 
 docker build --target qas -t marmotcai/shorttrading -f ./Dockerfile .
 
-docker rm -f my-shorttrading
-docker run --name my-shorttrading -d marmotcai/shorttrading
+docker run --rm -ti marmotcai/shorttrading /bin/bash
+
+# docker rm -f my-shorttrading
 
