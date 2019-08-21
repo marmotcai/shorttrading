@@ -3,6 +3,10 @@ import os
 import tensorflow as tf
 
 def mkdir(path):
+    filename = os.path.basename(path)
+    if len(filename) > 0:
+        path = os.path.dirname(path)
+
     # 去除首位空格
     path = path.strip()
     # 去除尾部 \ 符号

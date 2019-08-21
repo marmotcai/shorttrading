@@ -4,6 +4,8 @@ import configparser
 from utils import utils as my_utils
 from utils import logger as log
 
+import pandas as pd
+
 ################################################################################
 
 version = 'Atom Quant Analysis System, Version: 0.0.1'
@@ -49,6 +51,18 @@ class cmder:
         self.cmd = cmd
         self.time = time
 
+
+class Global:
+    def __init__(self):
+
+        my_utils.mkdir(default_datapath)
+
+        self.config = config()
+        self.log = log.logger(self.config.log_file, app_name)
+
+        pd.options.display.max_rows = 10
+        pd.options.display.float_format = '{:.1f}'.format
+
 class config:
     def __init__(self, filename = default_configfile):
         self.conf = configparser.ConfigParser()
@@ -68,6 +82,7 @@ class config:
 
     def init_config(self, filename):
         self.conf.add_section(default_section_setting)
+        self.conf.set(default_section_setting, 'logfile', default_logpath + app_name + '.log')
         self.conf.set(default_section_setting, 'datapath', default_datapath)
         self.conf.set(default_section_setting, 'daypath', default_datapath + default_daypath)
         self.conf.set(default_section_setting, 'inxpath', default_datapath + default_inxpath)
@@ -84,6 +99,7 @@ class config:
         self.clear()
         self.conf.read(filename)  # 装载配置文件
 
+        self.log_file = self.conf.get(default_section_setting, 'logfile')
         self.data_path = self.conf.get(default_section_setting, 'datapath')
         self.day_path = self.conf.get(default_section_setting, 'daypath')
         self.inx_path = self.conf.get(default_section_setting, 'inxpath')
@@ -110,22 +126,21 @@ class config:
         print("-----------------------------")
         print(version)
         print("***********")
-        print("data_path:" + self.data_path)
-        print("day_path:" + self.day_path)
-        print("inx_path:" + self.inx_path)
-        print("***********")
+        print("log_file:    " + self.log_file)
+        print("data_path:   " + self.data_path)
+        print("day_path:    " + self.day_path)
+        print("inx_path:    " + self.inx_path)
 
         print("schedule count: " +  str(len(self.schedules)))
         for index in range(0, len(self.schedules)):
-            print("***********")
             section_schedule = default_section_schedule + str(index)
             cmder = self.schedules[index]
             print(section_schedule + ":")
-            print("cmd: " + cmder.cmd)
-            print("at: " + cmder.time)
-            print("***********")
+            print("cmd:     " + cmder.cmd)
+            print("at:      " + cmder.time)
 
         print("-----------------------------")
 
-g_config = config()
-g_log = log.logger(default_logpath + app_name + '.log', app_name)
+g = Global()
+
+################################################################################

@@ -23,10 +23,15 @@ FROM builder as qas
 
 ENV WORK_DIR=/root
 WORKDIR ${WORK_DIR}
+
 ENV APP_NAME=shorttrading
 ENV GIT_URL=https://marmotcai:aa!112233@github.com/marmotcai/shorttrading.git
 RUN git clone $GIT_URL
 
 ENV WORK_DIR=${WORK_DIR}/${APP_NAME}
 WORKDIR $WORK_DIR
+
+RUN pip install -r requirements.txt
+
+CMD ["python3", "./training.py -h"]
 

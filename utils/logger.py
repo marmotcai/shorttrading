@@ -1,11 +1,14 @@
 import logging
 
+from utils import utils as my_utils
+
 ################################################################################
 
 class logger():
     def __init__(self, logfilename, appname = "", level = logging.INFO):
-        if len(appname) <= 0:
-            appname = __name__
+        my_utils.mkdir(logfilename)
+
+        if len(appname) <= 0: appname = __name__
         self.logger = logging.getLogger(appname)
         self.logger.setLevel(level = logging.INFO)
         self.handler = logging.FileHandler(logfilename)

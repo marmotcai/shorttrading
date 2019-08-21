@@ -17,19 +17,6 @@ import update as my_update
 
 ################################################################################
 
-def init():
-    # testing()
-    # exit(0)
-    #
-    # tf.logging.set_verbosity(tf.logging.ERROR)
-    # pd.options.display.max_rows = 10
-    # pd.options.display.float_format = '{:.1f}'.format
-
-    my_utils.mkdir(my_params.default_datadir)
-    my_utils.mkdir(my_params.default_logdir)
-
-################################################################################
-
 def usage():
     print("-h --help,           Display this help and exit")
     print("-v --version,        Print version infomation")
@@ -149,12 +136,16 @@ def main(cmd, argv):
     for name, value in options:
         if name in ("-h", "--help"):
             usage()
+
         if name in ("-v", "--version"):
-            my_params.g_config.print_current_information()
+            my_params.g.config.print_current_information()
+
         if name in ("-u", "--update"):
             my_update.main(argv)
+
         if name in ("-i", "--initialize"):
             usage()
+
         if name in ("-l", "--load"):
             loadconfig(value)
         if name in ("-s", "--setting"):
