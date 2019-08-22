@@ -1,0 +1,62 @@
+FROM marmotcai/centos-base AS python
+MAINTAINER marmotcai "marmotcai@163.com"
+
+ENV WORK_DIR=/root
+
+RUN yum clean all && \
+        yum makecache fast
+
+RUN sudo yum -y install epel-release
+RUN sudo yum -y install https://centos7.iuscommunity.org/ius-release.rpm
+RUN yum install -y gcc gcc-c++ make zlib zlib-devel bzip2 bzip2-devel ncurses openssl openssl-devel openssl-static xz lzma xz-devel sqlite sqlite-devel gdbm gdbm-devel tk tk-devel libffi-devel
+
+###################################################################################################
+
+ENV PYTHON_URL=https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz
+ENV PYTHON_SRC=$WORK_DIR/Python-3.7.4
+
+RUN wget -O ${WORK_DIR}/python.tgz ${PYTHON_URL} && \
+    tar -zxvf ${WORK_DIR}/python.tgz -C ${WORK_DIR}
+
+RUN cd ${PYTHON_SRC} && \
+    ./configure --prefix=/usr/local/python3 && \
+    make && \
+    make install
+
+RUN ln -s /usr/local/python3/bin/python3.7 /usr/bin/python3
+RUN ln -s /usr/local/python3/bin/pip3.7 /usr/bin/pip3
+
+RUN pip3 install --upgrade pip
+RUN pip3 install --upgrade setuptools
+RUN python3 --version
+
+RUN rm -f ${WORK_DIR}/python.tgz
+RUN rm -rf ${PYTHON_SRC}
+
+###################################################################################################
+
+FROM python AS builder
+
+MAINTAINER marmotcai "marmotcai@163.com"
+
+ENV APP_NAME=shorttrading
+ENV GIT_URL=https://xxxxxx:xxxxxx@github.com/marmotcai/shorttrading.git
+
+ENV WORK_DIR=/root/${APP_NAME}
+
+RUN mkdir -p $WORK_DIR
+COPY ./ $WORK_DIR
+# RUN git clone $GIT_URL
+
+WORKDIR $WORK_DIR
+
+# RUN pip3 freeze > requirements.txt
+RUN pip3 install -r requirements.txt
+RUN python3 training.py -h
+
+EXPOSE 22
+
+CMD /usr/sbin/sshd -D
+
+# CMD ["python3", "training.py -h"]
+
