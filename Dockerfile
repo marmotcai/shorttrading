@@ -25,10 +25,11 @@ RUN apt-get update && \
     apt-get clean
 
 RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config && \
-	sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/g' /etc/ssh/sshd_config && \
-	sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config && \
-	echo "root:112233" | chpasswd && \
-	mkdir /var/run/sshd
+    sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/g' /etc/ssh/sshd_config && \
+    sed -i 's/#PermitRootLogin yes/PermitRootLogin yes/g' /etc/ssh/sshd_config && \
+    sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config && \
+    echo "root:112233" | chpasswd && \
+    mkdir /var/run/sshd
 
 EXPOSE 22
 
@@ -38,5 +39,5 @@ CMD ["/usr/sbin/sshd", "-D"]
 # ENV PATH $PATH:$APP_PATH
 
 # COPY . .
-# CMD [ "python", "./training.py", "-h" ]
+# CMD [ "python3", "./training.py", "-h" ]
 
