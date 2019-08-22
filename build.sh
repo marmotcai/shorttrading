@@ -15,8 +15,17 @@ case $cmd in
     fi 
   ;;
 
+  run)
+    docker rm -f my-${APP_NAME}
+    if [[ $param =~ 'ssh' ]]; then
+      docker run --name my-${APP_NAME} -d -p 3222:22 -v $PWD:/root/app marmotcai/${APP_NAME}
+    else
+      docker run --name my-${APP_NAME} -d -v $PWD:/root/app marmotcai/${APP_NAME}
+    fi
+  ;;
+
   bash)
-    docker run --rm -ti -v $PWD:/root/app marmotcai/shorttrading /bin/bash
+    docker run --rm -ti -v $PWD:/root/app marmotcai/${APP_NAME} /bin/bash
   ;;
 
   python)
@@ -25,7 +34,9 @@ case $cmd in
 
   *)
     echo "use: sh build.sh image"
-    echo "use: sh build.sh bash"
+    echo "     sh build.sh image env"
+    echo "use: sh build.sh run # --ssh"
+    echo "     sh build.sh bash"
     echo "use: sh build.sh python training.py -v"
   ;;
 esac
