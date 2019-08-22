@@ -11,7 +11,7 @@ case $cmd in
     if [ ! -z "${param}" ];then
       docker build --target ${param} -t marmotcai/${param} -f ./Dockerfile .
     else
-      docker build marmotcai/${APP_NAME} -f ./Dockerfile .
+      docker build -t marmotcai/${APP_NAME} -f ./Dockerfile .
     fi 
   ;;
 
