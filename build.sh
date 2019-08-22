@@ -24,7 +24,7 @@ case $cmd in
   ;; 
 
   *)
-    echo "use: sh build.sh image env"
+    echo "use: sh build.sh image"
     echo "use: sh build.sh bash"
     echo "use: sh build.sh python training.py -v"
   ;;
